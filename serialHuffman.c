@@ -19,7 +19,8 @@ int main() {
     LinkedList list;
     list.head = NULL;
 
-    const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
+    //const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
+    const char* filename = "prueba.txt";
     processFile(filename, &list);
 
     printf("Lista desordenada: \n");
@@ -29,6 +30,11 @@ int main() {
 
     printf("Lista ordenada: \n");
     printList(&list);
+
+    printf("Creación del arbol: \n");
+    createTree(&list);
+    printTree(list.head);
+    //printTree(list.head, 0);
 
     freeList(&list);
 

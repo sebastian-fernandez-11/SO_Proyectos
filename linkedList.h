@@ -6,6 +6,8 @@ typedef struct Node {
     char data;
     int frequency;
     struct Node* next;
+    struct Node* left;
+    struct Node* right;
 } Node;
 
 typedef struct LinkedList {
@@ -22,12 +24,30 @@ Node* createNode(char data, int frequency) {
     newNode->data = data;
     newNode->frequency = frequency;
     newNode->next = NULL;
+    newNode->left = NULL;
+    newNode->right = NULL;
     return newNode;
 }
 
 // Añadir un nodo al final de la lista
 void append(LinkedList* list, char data, int frequency) {
     Node* newNode = createNode(data, frequency);
+    if (list->head == NULL) {
+        list->head = newNode;
+        return;
+    }
+    Node* temp = list->head;
+    while (temp->next != NULL) {
+        temp = temp->next;
+    }
+    temp->next = newNode;
+}
+
+// Añadir un nodo al final de la lista
+void appendForTree(LinkedList* list, char data, int frequency, Node* left, Node* right) {
+    Node* newNode = createNode(data, frequency);
+    newNode->left = left;
+    newNode->right = right;
     if (list->head == NULL) {
         list->head = newNode;
         return;
@@ -99,3 +119,64 @@ void sortList(LinkedList* list) {
 
     list->head = sorted;
 }
+
+// imprimir estructura completa del árbol
+void printTotal(LinkedList* list) {
+    Node* temp = list->head;
+    while (temp != NULL) {
+        printf("(\'%c\', %d) -> ", temp->data, temp->frequency);
+        if(temp->left != NULL) {
+            printf("Left: (\'%c\', %d) -> ", temp->left->data, temp->left->frequency);
+        }
+        if(temp->right != NULL) {
+            printf("Right: (\'%c\', %d) -> ", temp->right->data, temp->right->frequency);
+        }
+        
+        temp = temp->next;
+    }
+    printf("NULL\n");
+}
+
+// Crear un árbol de Huffman a partir de la lista enlazada
+void createTree(LinkedList* list) {
+    while (list->head != NULL && list->head->next != NULL) {
+        // Tomar los dos nodos con menor frecuencia
+        Node* left = list->head;
+        Node* right = list->head->next;
+
+        // Actualizar la cabeza de la lista
+        list->head = list->head->next->next;
+
+        // Insertar el nuevo nodo padre en la lista
+        appendForTree(list, '\0', left->frequency + right->frequency, left, right);
+        
+
+        printTotal(list);
+
+        // Ordenar la lista
+        sortList(list);
+        printTotal(list);
+        printf("***************************************\n");
+    }
+
+    // La cabeza de la lista ahora es la raíz del árbol de Huffman
+    if (list->head != NULL) {
+        printf("Árbol de Huffman creado. Raíz: %c\n", list->head->data);
+    }
+}
+
+void printTree(Node* root) {
+    if (root == NULL) {
+        return;
+    }
+    printf("(\'%c\', %d) -> ", root->data, root->frequency);
+    if(root->left != NULL) {
+        printf("Left: ");
+        printTree(root->left);
+    }
+    if(root->right != NULL) {
+        printf("Right: ");
+        printTree(root->right);
+    }
+}
+
