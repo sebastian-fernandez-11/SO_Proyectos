@@ -1,13 +1,18 @@
 // implement a linked list in c
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct Node {
     char data;
     int frequency;
+
     struct Node* next;
     struct Node* left;
     struct Node* right;
+
+    char* code;
+    int nCode;
 } Node;
 
 typedef struct LinkedList {
@@ -103,12 +108,15 @@ void sortList(LinkedList* list) {
 
     while (current != NULL) {
         Node* next = current->next;
-        if (sorted == NULL || sorted->frequency >= current->frequency) {
+        if (sorted == NULL || (sorted->frequency > current->frequency) || 
+            (sorted->frequency == current->frequency && sorted->data > current->data)) {
             current->next = sorted;
             sorted = current;
         } else {
             Node* temp = sorted;
-            while (temp->next != NULL && temp->next->frequency < current->frequency) {
+            while (temp->next != NULL && 
+                   (temp->next->frequency < current->frequency || 
+                   (temp->next->frequency == current->frequency && temp->next->data < current->data))) {
                 temp = temp->next;
             }
             current->next = temp->next;
@@ -120,43 +128,22 @@ void sortList(LinkedList* list) {
     list->head = sorted;
 }
 
-// imprimir estructura completa del árbol
-void printTotal(LinkedList* list) {
-    Node* temp = list->head;
-    while (temp != NULL) {
-        printf("(\'%c\', %d) -> ", temp->data, temp->frequency);
-        if(temp->left != NULL) {
-            printf("Left: (\'%c\', %d) -> ", temp->left->data, temp->left->frequency);
-        }
-        if(temp->right != NULL) {
-            printf("Right: (\'%c\', %d) -> ", temp->right->data, temp->right->frequency);
-        }
-        
-        temp = temp->next;
-    }
-    printf("NULL\n");
-}
 
 // Crear un árbol de Huffman a partir de la lista enlazada
 void createTree(LinkedList* list) {
     while (list->head != NULL && list->head->next != NULL) {
         // Tomar los dos nodos con menor frecuencia
-        Node* left = list->head;
-        Node* right = list->head->next;
+        Node* right = list->head;
+        Node* left = list->head->next;
 
         // Actualizar la cabeza de la lista
         list->head = list->head->next->next;
 
         // Insertar el nuevo nodo padre en la lista
         appendForTree(list, '\0', left->frequency + right->frequency, left, right);
-        
-
-        printTotal(list);
 
         // Ordenar la lista
         sortList(list);
-        printTotal(list);
-        printf("***************************************\n");
     }
 
     // La cabeza de la lista ahora es la raíz del árbol de Huffman
@@ -165,18 +152,65 @@ void createTree(LinkedList* list) {
     }
 }
 
-void printTree(Node* root) {
+// Función auxiliar para imprimir espacios
+void printSpaces(int count) {
+    for (int i = 0; i < count; i++) {
+        printf("  ");
+    }
+}
+
+// Función para imprimir el árbol de Huffman de manera jerárquica
+void printTree(Node* root, int level) {
     if (root == NULL) {
         return;
     }
-    printf("(\'%c\', %d) -> ", root->data, root->frequency);
-    if(root->left != NULL) {
-        printf("Left: ");
-        printTree(root->left);
+
+    printSpaces(level);
+    if(root->code == NULL){
+        printf("(\'%c\', %d)\n", root->data, root->frequency);
     }
-    if(root->right != NULL) {
-        printf("Right: ");
-        printTree(root->right);
+    else{
+        printf("(\'%c\', %d, %s, %d)\n", root->data, root->frequency, root->code, root->nCode);
+    }
+
+    if (root->left != NULL) {
+        printSpaces(level);
+        printf("Left:\n");
+        printTree(root->left, level + 1);
+    }
+
+    if (root->right != NULL) {
+        printSpaces(level);
+        printf("Right:\n");
+        printTree(root->right, level + 1);
+    }
+}
+
+void asignCodes(Node* root, char* code, int level) {
+    if (root == NULL) {
+        return;
+    }
+
+    if (root->left == NULL && root->right == NULL) {
+        root->code = (char*) malloc((strlen(code) + 1) * sizeof(char));
+        strcpy(root->code, code);
+        
+        root->nCode = level;
+        return;
+    }
+
+    if (root->left != NULL) {
+        char leftCode[100];
+        strcpy(leftCode, code);
+        strcat(leftCode, "0");
+        asignCodes(root->left, leftCode, level + 1);
+    }
+
+    if (root->right != NULL) {
+        char rightCode[100];
+        strcpy(rightCode, code);
+        strcat(rightCode, "1");
+        asignCodes(root->right, rightCode, level + 1);
     }
 }
 

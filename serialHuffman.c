@@ -15,6 +15,10 @@ void processFile(const char* filename, LinkedList* list) {
     fclose(file);
 }
 
+void compress(){
+    
+}
+
 int main() {
     LinkedList list;
     list.head = NULL;
@@ -33,8 +37,10 @@ int main() {
 
     printf("Creación del arbol: \n");
     createTree(&list);
-    printTree(list.head);
-    //printTree(list.head, 0);
+    printTree(list.head, 0);
+
+    asignCodes(list.head, "", 0);
+    printTree(list.head, 0);
 
     freeList(&list);
 
