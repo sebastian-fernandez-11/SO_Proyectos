@@ -36,10 +36,10 @@ void compress(const char *filename, LinkedList *list)
         exit(1);
     }
 
-    char jostin[] = "Jos";
-    size_t length = strlen(jostin);
+    char* text = "Jos";
+    size_t length = strlen(text);
     for (size_t i = 0; i < length; ++i) {
-        unsigned char ch = jostin[i];
+        unsigned char ch = text[i];
         for (int bit = 7; bit >= 0; --bit) {
             unsigned char bitValue = (ch >> bit) & 1;
             fwrite(&bitValue, sizeof(unsigned char), 1, compressed);
@@ -58,6 +58,51 @@ void compress(const char *filename, LinkedList *list)
     fclose(compressed);
 }
 
+void writeBitsToFile(const char *filename, const char *text) {
+    FILE *file = fopen(filename, "wb");
+    if (file == NULL) {
+        perror("Error al abrir el archivo para escritura");
+        exit(1);
+    }
+
+    size_t length = strlen(text);
+    for (size_t i = 0; i < length; ++i) {
+        unsigned char ch = text[i];
+        for (int bit = 7; bit >= 0; --bit) {
+            unsigned char bitValue = (ch >> bit) & 1;
+            fwrite(&bitValue, sizeof(unsigned char), 1, file);
+        }
+    }
+
+    fclose(file);
+}
+
+void readBitsFromFile(const char *filename, char *buffer, size_t bufferSize) {
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        perror("Error al abrir el archivo para lectura");
+        exit(1);
+    }
+
+    size_t index = 0;
+    unsigned char bitValue;
+    unsigned char ch = 0;
+    int bitCount = 0;
+
+    while (fread(&bitValue, sizeof(unsigned char), 1, file) == 1 && index < bufferSize - 1) {
+        ch = (ch << 1) | bitValue;
+        bitCount++;
+        if (bitCount == 8) {
+            buffer[index++] = ch;
+            ch = 0;
+            bitCount = 0;
+        }
+    }
+
+    buffer[index] = '\0';
+    fclose(file);
+}
+
 void decompress(LinkedList *list)
 {
     FILE *compressed = fopen("compressed.bin", "rb");
@@ -74,6 +119,29 @@ void decompress(LinkedList *list)
         fclose(compressed);
         exit(1);
     }
+
+    size_t index = 0;
+    unsigned char bitValue;
+    unsigned char ch = 0;
+    int bitCount = 0;
+    char buffer[100];
+
+    while (fread(&bitValue, sizeof(unsigned char), 1, compressed) == 1 && index < 100 - 1) {
+        ch = (ch << 1) | bitValue;
+        bitCount++;
+        if (bitCount == 8) {
+            buffer[index++] = ch;
+            ch = 0;
+            bitCount = 0;
+        }
+    }
+
+    buffer[index] = '\0'; // Añadir el carácter nulo al final
+
+    printf("Cadena leída: %s\n", buffer);
+
+    //free(buffer);
+    return;
 
     char c;
     char code[100];
@@ -94,6 +162,7 @@ void decompress(LinkedList *list)
 
     fclose(compressed);
     fclose(decompressed);
+    return;
 }
 
 int main()
@@ -121,7 +190,7 @@ int main()
     // printTree(list.head, 0);
 
     compress(filename, &list);
-  //  decompress(&list);
+    decompress(&list);
 
     freeList(&list);
 
