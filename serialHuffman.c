@@ -1,5 +1,7 @@
 #include "linkedList.h"
 
+#include <unistd.h>
+
 void processFile(const char *filename, LinkedList *list)
 {
     FILE *file = fopen(filename, "r");
@@ -27,7 +29,7 @@ void compress(const char *filename, LinkedList *list)
         exit(1);
     }
 
-    FILE *compressed = fopen("compressed.txt", "w");
+    FILE *compressed = fopen("compressed.bin", "wb");
     if (compressed == NULL)
     {
         printf("Error al crear el archivo de compresión\n");
@@ -37,7 +39,7 @@ void compress(const char *filename, LinkedList *list)
     char c;
     while ((c = fgetc(file)) != EOF)
     {
-        fprintf(compressed, searchCode(list->head, c));
+        fprintf(compressed, "%s", searchCode(list->head, c));
     }
 
     fclose(file);
@@ -46,8 +48,7 @@ void compress(const char *filename, LinkedList *list)
 
 void decompress(LinkedList *list)
 {
-
-    FILE *compressed = fopen("compressed.txt", "rb"); // "rb" para lectura binaria
+    FILE *compressed = fopen("compressed.bin", "rb");
     if (compressed == NULL)
     {
         printf("Error al abrir el archivo de compresión\n");
@@ -61,26 +62,22 @@ void decompress(LinkedList *list)
         fclose(compressed);
         exit(1);
     }
-    char c;
-    char buffer[256];
-    int cont = 0;
-    char character;
-    while ((c = fgetc(compressed)) != EOF){
-        buffer[cont] = c;
-        buffer[cont + 1] = '\0';
 
-        character = getCharacter(list->head, buffer);
-        
+    char c;
+    char code[100];
+    int cont = 0;
+    while ((c = fgetc(compressed)) != EOF){
+        code[cont] = c;
+        code[cont + 1] = '\0';
+        cont++;
+
+        char character = getCharacter(list->head, code);
         if (character != '\0')
         {
-            //printf("Código: %s\n", buffer);
-            //printf("Caracter: %c\n", character);
             fprintf(decompressed, "%c", character);
-            memset(buffer, 0, sizeof(buffer));
-            cont = -1;
+            memset(code, 0, sizeof(code));
+            cont = 0;
         }
-
-        cont++;
     }
 
     fclose(compressed);
@@ -97,12 +94,12 @@ int main()
     processFile(filename, &list);
 
     printf("Lista desordenada: \n");
-    printList(&list);
+    //printList(&list);
 
     sortList(&list);
 
     printf("Lista ordenada: \n");
-    printList(&list);
+    //printList(&list);
 
     printf("Creación del arbol: \n");
     createTree(&list);
