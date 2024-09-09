@@ -214,3 +214,36 @@ void asignCodes(Node* root, char* code, int level) {
     }
 }
 
+char* searchCode(Node* root, char c) {
+    if (root == NULL) {
+        return NULL;
+    }
+
+    // Si el nodo actual contiene el carácter buscado
+    if (root->data == c) {
+        return root->code;
+    }
+
+    // Buscar en el subárbol izquierdo
+    char* leftCode = searchCode(root->left, c);
+    if (leftCode != NULL) {
+        return leftCode;
+    }
+
+    // Buscar en el subárbol derecho
+    return searchCode(root->right, c);
+}
+
+char getCharacter(Node* current, char* code){
+    int len = strlen(code);
+    for(int i = 0; i < len; i++){
+        if(code[i] == '0' && current->left != NULL){
+            current = current->left;
+        }
+        else if(code[i] == '1' && current->right != NULL){
+            current = current->right;
+        }
+    }
+
+    return current->data;
+}
