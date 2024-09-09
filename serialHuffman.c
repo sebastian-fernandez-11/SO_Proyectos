@@ -36,6 +36,18 @@ void compress(const char *filename, LinkedList *list)
         exit(1);
     }
 
+    char jostin[] = "Jos";
+    size_t length = strlen(jostin);
+    for (size_t i = 0; i < length; ++i) {
+        unsigned char ch = jostin[i];
+        for (int bit = 7; bit >= 0; --bit) {
+            unsigned char bitValue = (ch >> bit) & 1;
+            fwrite(&bitValue, sizeof(unsigned char), 1, compressed);
+        }
+    }
+
+    return;
+
     char c;
     while ((c = fgetc(file)) != EOF)
     {
@@ -89,8 +101,8 @@ int main()
     LinkedList list;
     list.head = NULL;
 
-    const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
-    //const char* filename = "prueba.txt";
+    //const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
+    const char* filename = "prueba.txt";
     processFile(filename, &list);
 
     printf("Lista desordenada: \n");
@@ -109,7 +121,7 @@ int main()
     // printTree(list.head, 0);
 
     compress(filename, &list);
-    decompress(&list);
+  //  decompress(&list);
 
     freeList(&list);
 
