@@ -1,23 +1,32 @@
 #include "linkedList.h"
-
+#include "fileLinkedList.h"
+#include "dirent.h"
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-void processFile(const char *filename, LinkedList *list)
+void processFiles(const FileLinkedList *fileList, LinkedList *list)
 {
-    FILE *file = fopen(filename, "r");
-    if (file == NULL)
+    FileNode *current = fileList->head;
+    while (current != NULL)
     {
-        printf("Error al abrir el archivo\n");
-        exit(1);
-    }
+        FILE *file = fopen(current->filename, "r");
+        if (file == NULL)
+        {
+            printf("Error al abrir el archivo\n");
+            exit(1);
+        }
 
-    char ch;
-    while ((ch = fgetc(file)) != EOF)
-    {
-        incrementFrequency(list, ch);
-    }
+        char ch;
+        while ((ch = fgetc(file)) != EOF)
+        {
+            incrementFrequency(list, ch);
+        }
 
-    fclose(file);
+        fclose(file);
+        current = current->next;
+    }
 }
 
 void writeTreeAux(FILE *file, Node *root) {
@@ -53,16 +62,8 @@ void writeTree(FILE* file, Node *root) {
     writeTreeAux(file, root->right);
 }
 
-
-void compress(const char *filename, LinkedList *list)
+void compress(const FileLinkedList* fileList, LinkedList *list)
 {
-    FILE *file = fopen(filename, "r");
-    if (file == NULL)
-    {
-        printf("Error al abrir el archivo\n");
-        exit(1);
-    }
-
     FILE *compressed = fopen("compressed.bin", "wb");
     if (compressed == NULL)
     {
@@ -70,25 +71,49 @@ void compress(const char *filename, LinkedList *list)
         exit(1);
     }
 
-    writeTree(compressed, list->head);
+    FileNode *current = fileList->head;
+    while(current != NULL){
+        FILE *file = fopen(current->filename, "r");
+        if (file == NULL)
+        {
+            printf("Error al abrir el archivo\n");
+            exit(1);
+        }
 
-    //Insertar encabezado
-    char* name = (char*)malloc(strlen(filename) + 2);
-    strcpy(name, filename);
-    strcat(name, "@");
-    int len = strlen(name);
-    fwrite(name, sizeof(char), len, compressed);
+        writeTree(compressed, list->head);
 
-    //Escribir archivo comprimido
-    char c;
-    while ((c = fgetc(file)) != EOF)
-    {
-        fprintf(compressed, "%s", searchCode(list->head, c));
+        //Insertar encabezado
+        char* name = (char*)malloc(strlen(current->filename) + 2);
+        strcpy(name, current->filename);
+        strcat(name, "@");
+        int len = strlen(name);
+        fwrite(name, sizeof(char), len, compressed);
+
+        current = current->next;
     }
 
-    fclose(file);
+    current = fileList->head;
+    while(current != NULL){
+        FILE *file = fopen(current->filename, "r");
+        if (file == NULL)
+        {
+            printf("Error al abrir el archivo\n");
+            exit(1);
+        }
+
+        //Escribir archivo comprimido
+        char c;
+        //printf("Comprimiendo archivo: %s\n", current->filename);
+        while ((c = fgetc(file)) != EOF)
+        {
+            fprintf(compressed, "%s", searchCode(list->head, c));
+        }
+
+        fclose(file);
+        current = current->next;
+    }
+
     fclose(compressed);
-    free(name);
 }
 
 // Función para crear un nodo del árbol de Huffman
@@ -208,29 +233,79 @@ int main()
 {
     LinkedList list;
     list.head = NULL;
+    
+    // Lista para guardar nombres de los archivos
+    FileLinkedList fileList;
+    fileList.head = NULL;
 
-    const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
+    //const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
     //const char* filename = "prueba.txt";
-    processFile(filename, &list);
+    //processFile(filename, &list);
+    const char* dirpath = "./libros_gutenberg";
+    DIR *dir = opendir(dirpath);
+    if(dir == NULL){
+        perror("opendir");
+        return 0;
+    }
 
-    printf("Lista desordenada: \n");
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) { // Solo archivos regulares
+            char filepath[1024];
+            snprintf(filepath, sizeof(filepath), "%s/%s", dirpath, entry->d_name);
+            addFileNode(&fileList, filepath);
+        }
+    }
+
+    //printFileList(&fileList);
+    //int size = sizeFileList(&fileList);
+    //printf("Size: %d\n", size);
+    closedir(dir);
+
+    processFiles(&fileList, &list);
+    
+    //printf("Lista desordenada: \n");
     //printList(&list);
 
     sortList(&list);
 
-    printf("Lista ordenada: \n");
+   // printf("Lista ordenada: \n");
     //printList(&list);
 
-    printf("Creación del arbol: \n");
+
+    //printf("Creación del arbol: \n");
     createTree(&list);
-    // printTree(list.head, 0);
+  //  printTree(list.head, 0);
 
     asignCodes(list.head, "", 0);
+    //printTree(list.head, 0);
+
+    compress(&fileList, &list);
+    freeList(&list);
+    
+    decompress();
+
+
+    return 0;
+
+    //printf("Lista desordenada: \n");
+    //printList(&list);
+
+    //sortList(&list);
+
+    //printf("Lista ordenada: \n");
+    //printList(&list);
+
+   // printf("Creación del arbol: \n");
+   // createTree(&list);
     // printTree(list.head, 0);
 
-    compress(filename, &list);
-    freeList(&list);
-    decompress();
+  //  asignCodes(list.head, "", 0);
+    // printTree(list.head, 0);
+
+    //compress(filename, &list);
+  //  freeList(&list);
+   // decompress();
 
     return 0;
 }
