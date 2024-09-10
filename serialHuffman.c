@@ -71,6 +71,8 @@ void compress(const FileLinkedList* fileList, LinkedList *list)
         exit(1);
     }
 
+    writeTree(compressed, list->head);
+
     FileNode *current = fileList->head;
     while(current != NULL){
         FILE *file = fopen(current->filename, "r");
@@ -80,19 +82,28 @@ void compress(const FileLinkedList* fileList, LinkedList *list)
             exit(1);
         }
 
-        writeTree(compressed, list->head);
-
         //Insertar encabezado
-        char* name = (char*)malloc(strlen(current->filename) + 2);
+        char* name = (char*)malloc(strlen(current->filename) + 1);
         strcpy(name, current->filename);
         strcat(name, "@");
         int len = strlen(name);
         fwrite(name, sizeof(char), len, compressed);
 
+        //Escribir archivo comprimido
+        char c;
+        //printf("Comprimiendo archivo: %s\n", current->filename);
+        while ((c = fgetc(file)) != EOF)
+        {
+            fprintf(compressed, "%s", searchCode(list->head, c));
+        }
+
+        fclose(file);
+        fprintf(compressed, "@");
+
         current = current->next;
     }
 
-    current = fileList->head;
+    /*current = fileList->head;
     while(current != NULL){
         FILE *file = fopen(current->filename, "r");
         if (file == NULL)
@@ -110,8 +121,9 @@ void compress(const FileLinkedList* fileList, LinkedList *list)
         }
 
         fclose(file);
+        fprintf(compressed, "@");
         current = current->next;
-    }
+    }*/
 
     fclose(compressed);
 }
@@ -283,7 +295,7 @@ int main()
     compress(&fileList, &list);
     freeList(&list);
     
-    decompress();
+    //decompress();
 
 
     return 0;
