@@ -20,6 +20,40 @@ void processFile(const char *filename, LinkedList *list)
     fclose(file);
 }
 
+void writeTreeAux(FILE *file, Node *root) {
+    if (root == NULL) {
+        return;
+    }
+
+    if (root->data != '\0') {
+        fwrite("1", sizeof(char), 1, file);
+        fwrite(&root->data, sizeof(char), 1, file);
+    } else {
+        fwrite("0", sizeof(char), 1, file);
+    }
+
+    writeTreeAux(file, root->left);
+    writeTreeAux(file, root->right);
+}
+
+void writeTree(FILE* file, Node *root) {
+    //writeTreeAux(file, root);
+    if (root == NULL) {
+        return;
+    }
+
+    if (root->data != '\0') {
+        fwrite("1", sizeof(char), 1, file);
+        fwrite(&root->data, sizeof(char), 1, file);
+    } else {
+        fwrite("0", sizeof(char), 1, file);
+    }
+
+    writeTreeAux(file, root->left);
+    writeTreeAux(file, root->right);
+}
+
+
 void compress(const char *filename, LinkedList *list)
 {
     FILE *file = fopen(filename, "r");
@@ -36,18 +70,16 @@ void compress(const char *filename, LinkedList *list)
         exit(1);
     }
 
-    char* text = "Jos";
-    size_t length = strlen(text);
-    for (size_t i = 0; i < length; ++i) {
-        unsigned char ch = text[i];
-        for (int bit = 7; bit >= 0; --bit) {
-            unsigned char bitValue = (ch >> bit) & 1;
-            fwrite(&bitValue, sizeof(unsigned char), 1, compressed);
-        }
-    }
+    writeTree(compressed, list->head);
 
-    return;
+    //Insertar encabezado
+    char* name = (char*)malloc(strlen(filename) + 2);
+    strcpy(name, filename);
+    strcat(name, "@");
+    int len = strlen(name);
+    fwrite(name, sizeof(char), len, compressed);
 
+    //Escribir archivo comprimido
     char c;
     while ((c = fgetc(file)) != EOF)
     {
@@ -56,54 +88,66 @@ void compress(const char *filename, LinkedList *list)
 
     fclose(file);
     fclose(compressed);
+    free(name);
 }
 
-void writeBitsToFile(const char *filename, const char *text) {
-    FILE *file = fopen(filename, "wb");
-    if (file == NULL) {
-        perror("Error al abrir el archivo para escritura");
-        exit(1);
-    }
-
-    size_t length = strlen(text);
-    for (size_t i = 0; i < length; ++i) {
-        unsigned char ch = text[i];
-        for (int bit = 7; bit >= 0; --bit) {
-            unsigned char bitValue = (ch >> bit) & 1;
-            fwrite(&bitValue, sizeof(unsigned char), 1, file);
-        }
-    }
-
-    fclose(file);
+// Función para crear un nodo del árbol de Huffman
+Node* createNodeTree(char data){
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = data;
+    newNode->left = NULL;
+    newNode->right = NULL;
+    return newNode;
 }
 
-void readBitsFromFile(const char *filename, char *buffer, size_t bufferSize) {
-    FILE *file = fopen(filename, "rb");
-    if (file == NULL) {
-        perror("Error al abrir el archivo para lectura");
-        exit(1);
+// Función recursiva para leer el árbol de Huffman desde el archivo
+Node* readTreeAux(FILE *file) {
+    int bit = fgetc(file);
+    if (bit == EOF) {
+        return NULL;
     }
 
-    size_t index = 0;
-    unsigned char bitValue;
-    unsigned char ch = 0;
-    int bitCount = 0;
-
-    while (fread(&bitValue, sizeof(unsigned char), 1, file) == 1 && index < bufferSize - 1) {
-        ch = (ch << 1) | bitValue;
-        bitCount++;
-        if (bitCount == 8) {
-            buffer[index++] = ch;
-            ch = 0;
-            bitCount = 0;
-        }
+    if (bit == '1') {
+        char data = fgetc(file);
+        Node* node = createNodeTree(data);
+        return node;
+    } else if (bit == '0') {
+        Node* node = createNodeTree('\0');
+        node->left = readTreeAux(file);
+        node->right = readTreeAux(file);
+        return node;
     }
 
-    buffer[index] = '\0';
-    fclose(file);
+    return NULL;
 }
 
-void decompress(LinkedList *list)
+// Función para leer el árbol de Huffman desde el archivo
+Node* readTree(FILE* file) {
+    Node* root = readTreeAux(file);
+    return root;
+}
+
+// Función para imprimir el árbol de Huffman (para pruebas)
+void printTreeMain(Node *root, int depth) {
+    if (root == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < depth; i++) {
+        printf("  ");
+    }
+
+    if (root->data == '\0') {
+        printf("Node\n");
+    } else {
+        printf("Leaf: %c\n", root->data);
+    }
+
+    printTree(root->left, depth + 1);
+    printTree(root->right, depth + 1);
+}
+
+void decompress()
 {
     FILE *compressed = fopen("compressed.bin", "rb");
     if (compressed == NULL)
@@ -111,6 +155,24 @@ void decompress(LinkedList *list)
         printf("Error al abrir el archivo de compresión\n");
         exit(1);
     }
+
+    //Leer árbol
+    Node* root  = readTree(compressed);
+    //printTreeMain(root, 0);
+
+    //Leer encabezado
+    char c;
+    char name[512];
+    while((c = fgetc(compressed)) != '@'){
+        strcat(name, &c);
+    }
+    strcat(name, "\0");
+
+    char url[512];
+    strcpy(url, "decompressed/");
+    strcat(url, name);
+
+    printf("URL: %s\n", url);
 
     FILE *decompressed = fopen("decompressed.txt", "w");
     if (decompressed == NULL)
@@ -120,30 +182,7 @@ void decompress(LinkedList *list)
         exit(1);
     }
 
-    size_t index = 0;
-    unsigned char bitValue;
-    unsigned char ch = 0;
-    int bitCount = 0;
-    char buffer[100];
-
-    while (fread(&bitValue, sizeof(unsigned char), 1, compressed) == 1 && index < 100 - 1) {
-        ch = (ch << 1) | bitValue;
-        bitCount++;
-        if (bitCount == 8) {
-            buffer[index++] = ch;
-            ch = 0;
-            bitCount = 0;
-        }
-    }
-
-    buffer[index] = '\0'; // Añadir el carácter nulo al final
-
-    printf("Cadena leída: %s\n", buffer);
-
-    //free(buffer);
-    return;
-
-    char c;
+    //char c;
     char code[100];
     int cont = 0;
     while ((c = fgetc(compressed)) != EOF){
@@ -151,7 +190,7 @@ void decompress(LinkedList *list)
         code[cont + 1] = '\0';
         cont++;
 
-        char character = getCharacter(list->head, code);
+        char character = getCharacter(root, code);
         if (character != '\0')
         {
             fprintf(decompressed, "%c", character);
@@ -170,8 +209,8 @@ int main()
     LinkedList list;
     list.head = NULL;
 
-    //const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
-    const char* filename = "prueba.txt";
+    const char* filename = "libros_gutenberg/2_Moby_Dick;_Or,_The_Whale_by_Herman_Melville_(72669).txt";
+    //const char* filename = "prueba.txt";
     processFile(filename, &list);
 
     printf("Lista desordenada: \n");
@@ -190,9 +229,8 @@ int main()
     // printTree(list.head, 0);
 
     compress(filename, &list);
-    decompress(&list);
-
     freeList(&list);
+    decompress();
 
     return 0;
 }
