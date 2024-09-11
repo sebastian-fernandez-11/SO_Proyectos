@@ -103,28 +103,6 @@ void compress(const FileLinkedList* fileList, LinkedList *list)
         current = current->next;
     }
 
-    /*current = fileList->head;
-    while(current != NULL){
-        FILE *file = fopen(current->filename, "r");
-        if (file == NULL)
-        {
-            printf("Error al abrir el archivo\n");
-            exit(1);
-        }
-
-        //Escribir archivo comprimido
-        char c;
-        //printf("Comprimiendo archivo: %s\n", current->filename);
-        while ((c = fgetc(file)) != EOF)
-        {
-            fprintf(compressed, "%s", searchCode(list->head, c));
-        }
-
-        fclose(file);
-        fprintf(compressed, "@");
-        current = current->next;
-    }*/
-
     fclose(compressed);
 }
 
@@ -184,6 +162,62 @@ void printTreeMain(Node *root, int depth) {
     printTree(root->right, depth + 1);
 }
 
+void decompressFile(FILE *compressed, Node* root) {
+    while (!feof(compressed)) {
+        // Leer encabezado
+        char c;
+        char name[512] = {0}; // Inicializar el array para evitar basura
+        while ((c = fgetc(compressed)) != '@' && c != EOF) {
+            strncat(name, &c, 1); // Usar strncat para evitar problemas de buffer
+        }
+        if (c == EOF) {
+            break; // Salir del bucle si se alcanza el fin del archivo
+        }
+
+        // Obtener solo el nombre del archivo a partir de la ruta completa
+        char *filename = strrchr(name, '/');
+        if (filename != NULL) {
+            filename++; // Avanzar el puntero para saltar el '/'
+        } else {
+            filename = name; // Si no se encuentra '/', usar el nombre completo
+        }
+
+        char url[512];
+        strcpy(url, "decompressed/");
+        strcat(url, filename);
+
+        printf("URL: %s\n", url);
+
+        FILE *decompressed = fopen(url, "w");
+        if (decompressed == NULL) {
+            printf("Error al crear el archivo de descompresión\n");
+            fclose(compressed);
+            exit(1);
+        }
+
+        // Leer y descomprimir el contenido
+        char code[100] = {0}; // Inicializar el array para evitar basura
+        int cont = 0;
+        while ((c = fgetc(compressed)) != EOF) {
+            if (c == '@') {
+                break; // Salir del bucle si se encuentra el siguiente encabezado
+            }
+            code[cont] = c;
+            code[cont + 1] = '\0';
+            cont++;
+
+            char character = getCharacter(root, code);
+            if (character != '\0') {
+                fprintf(decompressed, "%c", character);
+                memset(code, 0, sizeof(code));
+                cont = 0;
+            }
+        }
+
+        fclose(decompressed);
+    }
+}
+
 void decompress()
 {
     FILE *compressed = fopen("compressed.bin", "rb");
@@ -197,8 +231,11 @@ void decompress()
     Node* root  = readTree(compressed);
     //printTreeMain(root, 0);
 
+    decompressFile(compressed, root);
+
+    
     //Leer encabezado
-    char c;
+    /*char c;
     char name[512];
     while((c = fgetc(compressed)) != '@'){
         strcat(name, &c);
@@ -236,14 +273,15 @@ void decompress()
         }
     }
 
+    fclose(decompressed);*/
+
     fclose(compressed);
-    fclose(decompressed);
     return;
 }
 
 int main()
 {
-    LinkedList list;
+    /*LinkedList list;
     list.head = NULL;
     
     // Lista para guardar nombres de los archivos
@@ -292,10 +330,10 @@ int main()
     asignCodes(list.head, "", 0);
     //printTree(list.head, 0);
 
-    compress(&fileList, &list);
-    freeList(&list);
+    //compress(&fileList, &list);
+    freeList(&list);*/
     
-    //decompress();
+    decompress();
 
 
     return 0;
