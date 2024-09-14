@@ -256,9 +256,15 @@ void serial_decompress(char *filename, char *folder)
     consultFolder(folder);
 
     //decompressFiles(compressed, root, folder);
-    decompressFile(compressed, root, folder, positions.head->next->position);
+    current = positions.head;
+    while(current->next != NULL){
+        decompressFile(compressed, root, folder, current->position);
+        current = current->next;
+    }
+    //decompressFile(compressed, root, folder, positions.head->next->position);
     //decompressFile(compressed, root, folder, 0);
-
+    // delete the file temp.txt
+ 
     fclose(compressed);
     return;
 }

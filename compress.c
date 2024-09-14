@@ -72,7 +72,40 @@ void writeTree(FILE* file, Node *root) {
     writeTree(file, root->right);
 }
 
-void compress(const FileLinkedList* fileList, LinkedList *list) {
+void compress_file(LinkedList *list, char *filename, FILE *compressed, FILE *temp) {
+    FILE *file = fopen(filename, "r");
+        if (file == NULL) {
+            printf("Error al abrir el archivo\n");
+            exit(1);
+        }
+        
+        fprintf(temp, "%ld", ftell(compressed));
+        fprintf(temp, "@");
+        
+        //Insertar nombre del archivo
+        int nameLen = strlen(filename) + 2; // +2 para '@' y '\0'
+        char* name = (char*)malloc(nameLen);
+        if (name == NULL) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(name, filename);
+        strcat(name, "@");
+        fwrite(name, sizeof(char), nameLen - 1, compressed); // -1 para no escribir el '\0'
+        free(name);
+
+        char c;
+        while ((c = fgetc(file)) != EOF)
+        {
+            fprintf(compressed, "%s", searchCode(list->head, c));
+        }
+
+        fclose(file);
+        fprintf(compressed, "@");
+
+}
+
+void compress_files(const FileLinkedList* fileList, LinkedList *list) {
     //FILE *compressed = fopen("compressed.bin", "wb");
     FILE *compressed = fopen("compressed.txt", "w");
     if (compressed == NULL)
@@ -95,45 +128,15 @@ void compress(const FileLinkedList* fileList, LinkedList *list) {
 
     FileNode *current = fileList->head;
     while(current != NULL){
-    //int cont = 0;
-    //while(cont < 2){
-        FILE *file = fopen(current->filename, "r");
-        if (file == NULL) {
-            printf("Error al abrir el archivo\n");
-            exit(1);
-        }
-        
-        fprintf(temp, "%d", ftell(compressed));
-        fprintf(temp, "@");
-        
-        //Insertar nombre del archivo
-        int nameLen = strlen(current->filename) + 2; // +2 para '@' y '\0'
-        char* name = (char*)malloc(nameLen);
-        if (name == NULL) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
-        strcpy(name, current->filename);
-        strcat(name, "@");
-        fwrite(name, sizeof(char), nameLen - 1, compressed); // -1 para no escribir el '\0'
-        free(name);
-
-        char c;
-        while ((c = fgetc(file)) != EOF)
-        {
-            fprintf(compressed, "%s", searchCode(list->head, c));
-        }
-
-        fclose(file);
-        fprintf(compressed, "@");
-
+        compress_file(list, current->filename, compressed, temp);
         current = current->next;
-        //cont++;
     }
 
     fclose(temp);
     fclose(compressed);
+}
 
+void generate_bin(){
     // Insertar contenido de temp al inicio de compressed
     FILE *originalCompressed = fopen("compressed.txt", "r");
     if (originalCompressed == NULL) {
@@ -186,15 +189,13 @@ void compress(const FileLinkedList* fileList, LinkedList *list) {
     fclose(tempFile);
     fclose(newCompressed);
     
-    // Renombrar el nuevo archivo de compresión para que reemplace al original
-    if (remove("compressed.txt") != 0) {
-        perror("Error al eliminar el archivo de compresión original");
-        exit(1);
-    }
+ 
     if (rename("new_compressed.bin", "compressed.bin") != 0) {
         perror("Error al renombrar el nuevo archivo de compresión");
         exit(1);
     }
+    remove("compressed.txt");
+    remove("temp.txt");
 }
 
 void serial_compress(const char* dirpath, LinkedList *list, FileLinkedList *fileList) {
@@ -203,7 +204,8 @@ void serial_compress(const char* dirpath, LinkedList *list, FileLinkedList *file
     sortList(list);
     createTree(list);
     asignCodes(list->head, "", 0);
-    compress(fileList, list);
+    compress_files(fileList, list);
+    generate_bin();
 }
 
 int main(int argc, char *argv[]) {
