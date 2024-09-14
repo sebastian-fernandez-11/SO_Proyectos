@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 char buffer[200000] = "";
 
@@ -223,11 +224,21 @@ int main(int argc, char *argv[]) {
     FileLinkedList fileList;
     fileList.head = NULL;
 
+    struct timespec start, end;
+    long spend_time;
+
     const char* dirpath = "./libros_gutenberg";
     if(argv[1][0] == '0') {
+        clock_gettime(CLOCK_MONOTONIC, &start);
         serial_compress(dirpath, &list, &fileList);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+        printf("Compresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+        printf("Tiempo de ejecución: %ld s\n", spend_time);
+
     } else {
-        printf("Algoritmo no reconocido.\n");
+        printf("Algoritmo no válido.\n");
         exit(1);
     }
 

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <time.h>
 
 // Función para crear un nodo del árbol de Huffman
 Node *createNodeTree(char data)
@@ -77,7 +78,7 @@ void decompressFile(FILE *compressed, Node *root, char *folder, int fileNumber)
         }
     }*/
 
-   printf("File number: %d\n", fileNumber);
+   //printf("File number: %d\n", fileNumber);
 
     fseek(compressed, fileNumber, SEEK_SET);
 
@@ -104,7 +105,7 @@ void decompressFile(FILE *compressed, Node *root, char *folder, int fileNumber)
     strcat(url, "/");
     strcat(url, filename);
 
-    printf("Descomprimiendo archivo: %s\n", url);
+    //printf("Descomprimiendo archivo: %s\n", url);
 
     FILE *decompressed = fopen(url, "w");
     if (decompressed == NULL)
@@ -227,8 +228,8 @@ void serial_decompress(char *filename, char *folder)
 
     int cantExtra = atoi(extraChar);
 
-    printf("Extra char: %s\n", extraChar);
-    printf("Cantidad de archivos: %d\n", files);
+    //printf("Extra char: %s\n", extraChar);
+    //printf("Cantidad de archivos: %d\n", files);
     int cont = 0;    
     while(cont < files){
         while((c = fgetc(compressed)) != '@'){
@@ -244,19 +245,12 @@ void serial_decompress(char *filename, char *folder)
         cont++;
     }
 
-    //print positions
-    printf("Leyendo posiciones\n");
-    FileNode* current = positions.head;
-    while(current != NULL){
-        printf("%d\n", current->position);
-        current = current->next;
-    }
-
     Node* root = readTree(compressed);
     consultFolder(folder);
 
     //decompressFiles(compressed, root, folder);
-    current = positions.head;
+    
+    FileNode* current = positions.head;
     while(current->next != NULL){
         decompressFile(compressed, root, folder, current->position);
         current = current->next;
@@ -318,14 +312,22 @@ int main(int argc, char *argv[])
     char *folder = argv[2];
     char *exec = argv[3];
 
+    struct timespec start, end;
+    long spend_time;
+
     if (strcmp(exec, "0") == 0)
     {
+        clock_gettime(CLOCK_MONOTONIC, &start);
         serial_decompress(filename, folder);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+        printf("Descompresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+        printf("Tiempo de ejecución: %ld s\n", spend_time);
     }
     else if(strcmp(exec, "1") == 0){
         fork_decompress(filename, folder);
     }
 
-    printf("Descompresión exitosa\n");
     return 0;
 }
