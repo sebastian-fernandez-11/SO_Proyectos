@@ -4,6 +4,7 @@
 
 typedef struct FileNode {
     char* filename;
+    int position;
     struct FileNode* next;
 } FileNode;
 
@@ -12,7 +13,7 @@ typedef struct FileLinkedList {
 } FileLinkedList;
 
 // Función para crear un nuevo nodo
-FileNode* createFileNode(const char* filename) {
+FileNode* createFileNode(const char* filename, int position) {
     FileNode* newNode = (FileNode*)malloc(sizeof(FileNode));
     if (newNode == NULL) {
         perror("malloc");
@@ -24,13 +25,14 @@ FileNode* createFileNode(const char* filename) {
         free(newNode);
         exit(EXIT_FAILURE);
     }
+    newNode->position = position;
     newNode->next = NULL;
     return newNode;
 }
 
 // Función para agregar un nodo a la lista
-void addFileNode(FileLinkedList* list, const char* filename) {
-    FileNode* newNode = createFileNode(filename);
+void addFileNode(FileLinkedList* list, const char* filename, int position) {
+    FileNode* newNode = createFileNode(filename, position);
     if (list->head == NULL) {
         list->head = newNode;
     } else {
@@ -46,7 +48,7 @@ void addFileNode(FileLinkedList* list, const char* filename) {
 void printFileList(const FileLinkedList* list) {
     FileNode* current = list->head;
     while (current != NULL) {
-        printf("%s\n", current->filename);
+        printf("Filname: %s, Position: %d\n", current->filename, current->position);
         current = current->next;
     }
 }
