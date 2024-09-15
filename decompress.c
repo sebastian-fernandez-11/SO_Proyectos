@@ -4,11 +4,18 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <time.h>
+
+typedef struct ThreadArgs {
+    FILE* file;
+    Node* root;
+    char* folder;
+    FileNode* current;
+} ThreadArgs;
 
 // Función para crear un nodo del árbol de Huffman
 Node *createNodeTree(char data)
@@ -129,6 +136,7 @@ void decompressFile(FILE *compressed, Node *root, char *folder, int fileNumber)
     strcpy(url, folder);
     strcat(url, "/");
     strcat(url, filename);
+   // printf("Descomprimiendo %s\n", url);
 
     FILE *decompressed = fopen(url, "w");
     if (decompressed == NULL)
@@ -211,6 +219,53 @@ void fork_decompress(char* filename, char* folder){
     return;
 }
 
+void* concurrent_decompress_file(void* args){
+    ThreadArgs* arguments = (ThreadArgs*) args;
+    decompressFile(arguments->file, arguments->root, arguments->folder, arguments->current->position);
+    fclose(arguments->file);
+    return NULL;
+}
+
+void concurrent_decompress(char* filename, char* folder){
+    FileLinkedList positions;
+    positions.head = NULL;
+    
+    // Abrir el archivo comprimido y leer las posiciones y el árbol
+    FILE* compressed = readBinFile(filename);
+    readPositions(compressed, &positions);
+    Node* root = readTree(compressed);
+    fclose(compressed); 
+    
+    consultFolder(folder);
+
+    int i = 0;
+    int threadsSize = sizeFileList(&positions);
+    pthread_t threads[threadsSize];
+    ThreadArgs args[threadsSize];
+
+
+    FileNode* current = positions.head;
+    while(current != NULL && i < threadsSize){
+        args[i].current = current;
+        args[i].file = readBinFile(filename);
+        args[i].root = root;
+        args[i].folder = folder;
+
+        pthread_create(&threads[i], NULL, concurrent_decompress_file, &args[i]);
+
+        current = current->next;
+        i++;
+    }
+
+    for(i = 0; i < threadsSize; i++){
+        pthread_join(threads[i], NULL);
+    }
+    
+    return;  
+}
+
+
+
 int main(int argc, char *argv[])
 {
     if (argc < 4)
@@ -241,7 +296,25 @@ int main(int argc, char *argv[])
         printf("Tiempo de ejecución: %ld s\n", spend_time);
     }
     else if(strcmp(exec, "1") == 0){
+        clock_gettime(CLOCK_MONOTONIC, &start);
         fork_decompress(filename, folder);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+        printf("Descompresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+        printf("Tiempo de ejecución: %ld s\n", spend_time);
+    } else if(strcmp(exec, "2") == 0){
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        concurrent_decompress(filename, folder);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+        printf("Descompresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+        printf("Tiempo de ejecución: %ld s\n", spend_time);
+    } else
+    {
+        printf("Tipo de ejecución no válido.\n");
+        return 1;
     }
 
     return 0;
