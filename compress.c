@@ -14,7 +14,10 @@
 #include <libgen.h>
 #include <sys/stat.h>
 
-pthread_mutex_t file_mutex;
+typedef struct {
+    LinkedList *list;
+    FileNode *file;
+} ThreadData;
 
 FILE* openWriteFile(const char* filename) {
     FILE* file = fopen(filename, "w");
@@ -87,6 +90,7 @@ void writeTree(FILE* file, Node *root) {
 }
 
 void compress_file(LinkedList *list, char *filename, FILE *compressed, FILE *temp) {
+    //printf("Comprimiendo %s\n", filename);
     FILE *file = fopen(filename, "r");
     if (file == NULL)
     {
@@ -122,6 +126,27 @@ void compress_file(LinkedList *list, char *filename, FILE *compressed, FILE *tem
 
     fclose(file);
     fprintf(compressed, "@");
+}
+
+void* thread_compress_file(void* arg) {
+    ThreadData* data = (ThreadData*)arg;
+    FileNode* fileNode = data->file;
+    LinkedList* list = data->list;
+
+    char url[512];
+    strcpy(url, "temporales/");
+    strcat(url, basename(fileNode->filename));
+
+    FILE *compressed_child = fopen(url, "a");
+    if (compressed_child == NULL) {
+        printf("Error al abrir el archivo de compresión en el hilo\n");
+        pthread_exit(NULL);
+    }
+
+    compress_file(list, fileNode->filename, compressed_child, NULL);
+
+    fclose(compressed_child);
+    pthread_exit(NULL);
 }
 
 void compress_files(const FileLinkedList* fileList, LinkedList *list) {
@@ -355,9 +380,86 @@ void fork_compress(const char* dirpath, LinkedList *list, FileLinkedList *fileLi
     generate_bin();
 }
 
-void execute_time(struct timespec start, struct timespec end) {
+void concurrent_compress(const char* dirpath, LinkedList *list, FileLinkedList *fileList) {
+    loadFiles(dirpath, fileList);
+    processFiles(fileList, list);
+    sortList(list);
+    createTree(list);
+    asignCodes(list->head, "", 0);
+
+    FILE *compressed = fopen("compressed.txt", "w");
+    if (compressed == NULL) {
+        printf("Error al crear el archivo de compresión\n");
+        exit(1);
+    }
+
+    writeTree(compressed, list->head);
+    fclose(compressed);
+
+    FILE *temp = fopen("temp.txt", "w");
+    if (temp == NULL) {
+        printf("Error al crear el archivo temporal\n");
+        exit(1);
+    }
+
+    fprintf(temp, "%d", sizeFileList(fileList));
+    fprintf(temp, "@");
+    fclose(temp);
+
+    struct stat st = {0};
+    if (stat("temporales", &st) == -1) {
+        if (mkdir("temporales", 0755) == -1) {
+            perror("Error al crear la carpeta de descompresión");
+            exit(1);
+        }
+    }
+
+    FileNode* current = fileList->head;
+    int fileCount = sizeFileList(fileList);
+    pthread_t threads[fileCount];
+    ThreadData threadData[fileCount];
+
+    int i = 0;
+    while (current != NULL) {
+        threadData[i].list = list;
+        threadData[i].file = current;
+
+        if (pthread_create(&threads[i], NULL, thread_compress_file, &threadData[i]) != 0) {
+            perror("Error al crear el hilo");
+            exit(1);
+        }
+
+        current = current->next;
+        i++;
+    }
+
+    for (i = 0; i < fileCount; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    multi_generate_bin("temporales");
+    generate_bin();
+}
+
+void execute_time(struct timespec start, struct timespec end, int type) {
     long spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
-    printf("Compresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+    
+    switch (type) {
+    case 0:
+        printf("Compresión serial finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        break;
+    case 1:
+        printf("Compresión en paralelo finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        break;
+    
+    case 2:
+        printf("Compresión concurrente finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        break;
+
+    default:
+        break;
+    }
+
     spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
     printf("Tiempo de ejecución: %ld s\n", spend_time);
 }
@@ -384,7 +486,7 @@ int main(int argc, char *argv[]) {
         clock_gettime(CLOCK_MONOTONIC, &start);
         serial_compress(dirpath, &list, &fileList);
         clock_gettime(CLOCK_MONOTONIC, &end);
-        execute_time(start, end);
+        execute_time(start, end, 0);
         
 
     }
@@ -392,9 +494,13 @@ int main(int argc, char *argv[]) {
         clock_gettime(CLOCK_MONOTONIC, &start);
         fork_compress(dirpath, &list, &fileList);
         clock_gettime(CLOCK_MONOTONIC, &end);
-        execute_time(start, end);
-    } 
-    else {
+        execute_time(start, end, 1);
+    } else if(argv[1][0] == '2') {
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        concurrent_compress(dirpath, &list, &fileList);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        execute_time(start, end, 2);
+    } else {
         printf("Algoritmo no válido.\n");
         exit(1);
     }

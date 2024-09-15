@@ -229,7 +229,7 @@ void* concurrent_decompress_file(void* args){
 void concurrent_decompress(char* filename, char* folder){
     FileLinkedList positions;
     positions.head = NULL;
-    
+    //printf("Descomprimiendo en concurrencia...\n");
     // Abrir el archivo comprimido y leer las posiciones y el árbol
     FILE* compressed = readBinFile(filename);
     readPositions(compressed, &positions);
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
         serial_decompress(filename, folder);
         clock_gettime(CLOCK_MONOTONIC, &end);
         spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
-        printf("Descompresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        printf("Descompresion serial finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
         spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
         printf("Tiempo de ejecución: %ld s\n", spend_time);
     }
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
         fork_decompress(filename, folder);
         clock_gettime(CLOCK_MONOTONIC, &end);
         spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
-        printf("Descompresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        printf("Descompresion en paralelo finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
         spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
         printf("Tiempo de ejecución: %ld s\n", spend_time);
     } else if(strcmp(exec, "2") == 0){
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
         concurrent_decompress(filename, folder);
         clock_gettime(CLOCK_MONOTONIC, &end);
         spend_time = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
-        printf("Descompresion finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
+        printf("Descompresion concurrente finalizada. Tiempo de ejecución: %ld ns\n", spend_time);
         spend_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
         printf("Tiempo de ejecución: %ld s\n", spend_time);
     } else

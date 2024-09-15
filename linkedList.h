@@ -148,7 +148,7 @@ void createTree(LinkedList* list) {
 
     // La cabeza de la lista ahora es la raíz del árbol de Huffman
     if (list->head != NULL) {
-        printf("Árbol de Huffman creado. Raíz: %c\n", list->head->data);
+        //printf("Árbol de Huffman creado. Raíz: %c\n", list->head->data);
     }
 }
 
