@@ -353,7 +353,6 @@ void fork_compress(const char* dirpath, LinkedList *list, FileLinkedList *fileLi
 
     multi_generate_bin("temporales");
     generate_bin();
-    printf("Compresión finalizada\n");
 }
 
 void execute_time(struct timespec start, struct timespec end) {
