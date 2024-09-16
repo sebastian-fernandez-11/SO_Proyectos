@@ -3,4 +3,7 @@
 # Instalar gcc
 sudo dnf install gcc -y
 
-echo "Installation completed."
+make compress
+make decompress
+
+echo "Installation and compilation completed."
