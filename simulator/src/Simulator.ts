@@ -18,7 +18,7 @@ function main(){
     // console.log(mmu.pageTable);
     console.log('Memory', mmu.realMemory);
 
-    const pid2 = 2;
+    const pid2 = 1;
     const size2 = 10000;
     const ptr2 = mmu.new(pid2, size2);
     // symbolTable.set(ptr, [pid, size]);
@@ -34,6 +34,11 @@ function main(){
     mmu.use(ptr2);
     console.log('Memory', mmu.realMemory);
     console.log('Virtual', mmu.virtualMemory);
+
+    mmu.delete(ptr);
+    // mmu.kill(pid);
+    console.log('Memory', mmu.realMemory);
+    console.log('Virtual', mmu.virtualMemory);    
 
 
 }

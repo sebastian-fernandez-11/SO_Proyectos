@@ -5,7 +5,8 @@ class MMU{
     realMemory: Page[];
     virtualMemory: Page[];
     pageTable: Map<number, Page>;
-    symbolTable = new Map<number, number[]>();
+    processTable: Map<number, number[]>;
+    symbolTable : Map<number, number[]>;
     selectStrategy: AlgorithmStrategy;
     actualPageId: number;
     actualPtr: number;
@@ -14,6 +15,8 @@ class MMU{
         this.realMemory = [];
         this.virtualMemory = [];
         this.pageTable = new Map();
+        this.processTable = new Map();
+        this.symbolTable = new Map();
         this.selectStrategy = selectStrategy;
         this.actualPageId = 1;
         this.actualPtr = 0;
@@ -61,6 +64,7 @@ class MMU{
     }
 
     // Función que realiza el swap de una página de la memoria virtual a la memoria real
+    // pero sin hacer swap de una página que se ocupe en el momento
     swapVirtualToReal(page: Page,  ptr: number){
         page.isInRealMemory = true;
         page.realAddress = this.realMemory.length;
@@ -81,6 +85,16 @@ class MMU{
         console.log('Página swuapeada de virtual a real: ', page);
     }
 
+    // Función que busca una página en ambas memorias y la retorna
+    getPage(id: number): Page | undefined{
+        let page = this.realMemory.find(p => p.id === id);
+        if(page){
+            return page;
+        }
+        page = this.virtualMemory.find(p => p.id === id);
+        return page;
+    }
+
     new(pid: number, size: number): number{
         this.actualPtr++;
         const pageNeeded = Math.ceil(size / 4096);
@@ -93,13 +107,24 @@ class MMU{
             while(this.realMemory.length + pageNeeded > 100){
                 this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory));
             }
-
-            this.setRealMemory(pageNeeded);
-            
-            return this.actualPtr;
         }
-
+        
         this.setRealMemory(pageNeeded);
+
+        // Agrega el proceso a la tabla de procesos con su ptr
+        if(this.processTable.has(pid)){
+            const value = this.processTable.get(pid);
+            if(value){
+                value.push(this.actualPtr);
+                this.processTable.set(pid, value);
+            }
+            else{
+                console.error('Error al agregar el ptr al process table');
+            }
+        }
+        else{
+            this.processTable.set(pid, [this.actualPtr]);
+        }
 
         return this.actualPtr;
     }
@@ -109,7 +134,8 @@ class MMU{
             const value = this.symbolTable.get(ptr);
             if(value){
                 value.forEach(pageId => {
-                    const page = this.pageTable.get(pageId);
+                    // const page = this.pageTable.get(pageId);
+                    const page = this.getPage(pageId);
                     if(page && !page.isInRealMemory){
                         this.swapVirtualToReal(page, ptr);
                     }
@@ -121,9 +147,45 @@ class MMU{
         }
     }
 
-    delete(ptr: number){}
+    delete(ptr: number){
+        if(this.symbolTable.has(ptr)){
+            console.log('Deleting ptr: ', ptr);
+            const value = this.symbolTable.get(ptr);
+            if(value){
+                value.forEach(pageId => {
+                    // const page = this.pageTable.get(pageId);
+                    const page = this.getPage(pageId);
+                    if(page){
+                        if(page.isInRealMemory){
+                            this.realMemory = this.realMemory.filter(p => p.id !== page.id);
+                        }
+                        else{
+                            this.virtualMemory = this.virtualMemory.filter(p => p.id !== page.id);
+                        }
+                        // this.pageTable.delete(page.id);
+                    }
+                })                
+            }
+        }
+        else{
+            console.error('No se encontró el ptr en el symbol table');
+        }
+    }
 
-    kill(pid: number){}
+    kill(pid: number){
+        if(this.processTable.has(pid)){
+            const value = this.processTable.get(pid);
+            if(value){
+                value.forEach(ptr => {
+                    this.delete(ptr);
+                })
+            }
+            this.processTable.delete(pid);
+        }
+        else{
+            console.error('No se encontró el pid en el process table');
+        }
+    }
 
 }
 
