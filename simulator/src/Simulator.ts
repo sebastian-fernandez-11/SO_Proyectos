@@ -1,10 +1,11 @@
 import Page from "./classes/Page";
 import MMU from "./classes/MMU";
 import Random from "./classes/algorithms/Random";
+import FIFO from "./classes/algorithms/FIFO"
 
 
 // let symbolTable = new Map<number, number[]>();
-const algorithm = new Random();
+const algorithm = new FIFO();
 const mmu = new MMU(algorithm);
 let actualPageId = 0
 
