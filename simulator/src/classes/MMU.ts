@@ -81,7 +81,9 @@ class MMU {
 
         page.isInRealMemory = true;
         page.realAddress = address;
-        page.timestamp = Date.now();
+        page.timestampFIFO = Date.now();
+
+        //page.timestampMRU = Date.now();
 
         this.realMemory[address] = page;
         this.virtualMemory = this.virtualMemory.filter(p => p.id !== page.id);
@@ -121,6 +123,14 @@ class MMU {
         return true;
     }
 
+    removeChance() {
+        this.realMemory.forEach(page => {
+            if (page.chanceBit) {
+                page.chanceBit = false;
+            }
+        });
+    }
+
     new(pid: number, size: number): number {
         this.actualPtr++;
         const pageNeeded = Math.ceil(size / 4096);
@@ -158,13 +168,26 @@ class MMU {
         if (this.symbolTable.has(ptr)) {
             const value = this.symbolTable.get(ptr);
             if (value) {
+                value.forEach(pageId => {
+                    const page = this.getPage(pageId);
+                    if (page && page.isInRealMemory) {
+                        page.chanceBit = true;
+                    } else if(page) {
+                        page.timestampMRU = Date.now();
+                    } else {
+                        console.log('Entre antes del remove chance');
+                        this.removeChance();
+                        console.log('Hice remove chance');
+                    }
+                })
                 while (!this.checkPagesInMemory(value)) {
                     console.log('Páginas no están en memoria real');
+                    this.removeChance();
                     value.forEach(pageId => {
-                        const page = this.getPage(pageId);
-                        if (page && !page.isInRealMemory) {
+                        const page = this.getPage(pageId); 
+                        if (page && !page.isInRealMemory) {     
                             this.swapVirtualToReal(page, ptr);
-                        }
+                        } 
                     })
                 }
             }

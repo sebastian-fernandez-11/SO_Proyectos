@@ -2,13 +2,17 @@ class Page {
     id: number;
     realAddress: number;
     isInRealMemory: boolean;
-    timestamp: number;
+    timestampFIFO: number;
+    timestampMRU: number;
+    chanceBit: boolean;
     
     constructor(id: number, isInRealMemory: boolean, realAddress: number){
         this.id = id;
         this.isInRealMemory = isInRealMemory;
         this.realAddress = realAddress;
-        this.timestamp = Date.now();
+        this.timestampFIFO= Date.now();
+        this.timestampMRU= Date.now();
+        this.chanceBit = false;
     }
 }
 

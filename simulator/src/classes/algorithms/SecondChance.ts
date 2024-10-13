@@ -1,12 +1,12 @@
 import  AlgorithmStrategy  from './AlgorithmStrategy'
 import Page from '../Page'
 
-class FIFO implements AlgorithmStrategy {
+class SecondChance implements AlgorithmStrategy {
     selectPage(realMemory: Page[]): number {
         let min = Infinity;
         let minIndex = -1;
         realMemory.forEach((page, index) => {
-            if(page.timestampFIFO < min && page.isInRealMemory){
+            if(page.chanceBit === false && page.isInRealMemory && page.timestampFIFO < min){
                 min = page.timestampFIFO;
                 minIndex = index;
             }
@@ -16,4 +16,4 @@ class FIFO implements AlgorithmStrategy {
     }
 }
 
-export default FIFO;
+export default SecondChance;
