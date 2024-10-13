@@ -5,17 +5,19 @@ import FIFO from "./classes/algorithms/FIFO"
 
 import seedrandom from 'seedrandom';
 
+import { saveAs } from 'file-saver';
+import { read, readFileSync } from "fs";
+
 const random = seedrandom('1');
 
 
 // let symbolTable = new Map<number, number[]>();
 const algorithm = new Random();
 const mmu = new MMU(algorithm);
-let actualPageId = 0
 
-function main(){
-    // generateSentences();
-    // return; 
+function main() {
+    generateSentences(5, 5);
+    return;
 
     const pid = 1;
     const size = 409600;
@@ -49,46 +51,75 @@ function main(){
     console.log('Virtual', mmu.virtualMemory);
 }
 
-function generateSentences(){
-    const cant_processes = Math.floor(random() * 10);
-    for(let i = 0; i < cant_processes; i++){
-        const pid = Math.floor(random() * 100);
-        const size = Math.floor(random() * 1000);
-        console.log('Making new process with pid:', pid, 'and size:', size);
-        // const ptr = mmu.new(pid, size);
-        // console.log('Memory', mmu.realMemory);
-        // console.log('Virtual', mmu.virtualMemory);
+function generateSentences(cant_processes: number, cant_instructions: number) {
+
+    let instructions = '';
+
+    for (let i = 0; i < cant_processes; i++) {
+        const size = Math.floor(random() * 400000);
+        instructions += `new(${i},${size})\n`;
     }
 
-    const cant_use = Math.floor(random() * 10);
-    for(let i = 0; i < cant_use; i++){
-        const ptr = Math.floor(random() * 100);
-        console.log('Using ptr:', ptr);
-        // mmu.use(ptr);
-        // console.log('Memory', mmu.realMemory);
-        // console.log('Virtual', mmu.virtualMemory);
+    for (let i = 0; i < cant_instructions; i++) {
+        const pid = Math.floor(random() * cant_processes);
+        const operation = Math.floor(random() * 3);
+        switch (operation) {
+            case 0:
+                instructions += `use(${pid})\n`;
+                break;
+            case 1:
+                instructions += `delete(${pid})\n`;
+                break;
+            case 2:
+                instructions += `kill(${pid})\n`;
+                break;
+        }
     }
 
-    const cant_delete = Math.floor(random() * 10);
-    for(let i = 0; i < cant_delete; i++){
-        const ptr = Math.floor(random() * 100);
-        console.log('Deleting ptr:', ptr);
-        // mmu.delete(ptr);
-        // console.log('Memory', mmu.realMemory);
-        // console.log('Virtual', mmu.virtualMemory);
-    }
-
-    const cant_kill = Math.floor(random() * 10);
-    for(let i = 0; i < cant_kill; i++){
-        const pid = Math.floor(random() * 10);
-        console.log('Killing pid:', pid);
-        // mmu.kill(pid);
-        // console.log('Memory', mmu.realMemory);
-        // console.log('Virtual', mmu.virtualMemory);
-    }
+    const blob = new Blob([instructions], { type: 'text/plain' });
+    saveAs(blob, 'instructions.txt');
+    
 }
 
-export { actualPageId, main };
+function readInstructions(instructions: string) {
+    const lines = instructions.split('\n');
+
+    lines.forEach(line => {
+        const match = line.match(/(\w+)\((\d+)(?:,\s*(\d+))?\)/);
+        if (match) {
+            const operation = match[1];
+            const id = parseInt(match[2], 10);
+            const size = match[3] ? parseInt(match[3], 10) : undefined;
+
+            switch (operation) {
+                case 'new':
+                    console.log('New process with pid:', id, 'and size:', size);
+                    console.log('Types:', typeof id, typeof size);
+                    mmu.new(id, size!);
+                    break;
+                case 'use':
+                    console.log('Using ptr:', id);
+                    console.log('Types:', typeof id);
+                    mmu.use(id);
+                    break;
+                case 'delete':
+                    console.log('Deleting ptr:', id);
+                    console.log('Types:', typeof id);
+                    mmu.delete(id);
+                    break;
+                case 'kill':
+                    console.log('Killing pid:', id);
+                    console.log('Types:', typeof id);
+                    mmu.kill(id);
+                    break;
+                default:
+                    console.error(`Operación desconocida: ${operation}`);
+            }
+        }
+    });
+}
+
+export { main, readInstructions };
 
 
 

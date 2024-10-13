@@ -203,7 +203,9 @@ class MMU {
             const value = this.processTable.get(pid);
             if (value) {
                 value.forEach(ptr => {
-                    this.delete(ptr);
+                    if(this.symbolTable.has(ptr)) {
+                        this.delete(ptr);
+                    }
                 })
             }
             this.processTable.delete(pid);
