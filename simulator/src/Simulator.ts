@@ -1,5 +1,7 @@
 import Page from "./classes/Page";
 import MMU from "./classes/MMU";
+
+import AlgorithmStrategy from "./classes/algorithms/AlgorithmStrategy";
 import Random from "./classes/algorithms/Random";
 import FIFO from "./classes/algorithms/FIFO"
 import MRU from "./classes/algorithms/MRU"
@@ -10,94 +12,109 @@ import seedrandom from 'seedrandom';
 import { saveAs } from 'file-saver';
 import { read, readFileSync } from "fs";
 
-const random = seedrandom('1');
+let random: () => number;
+let algorithm: AlgorithmStrategy;
+let mmu: MMU;
 
+let isPaused = false;
 
-// let symbolTable = new Map<number, number[]>();
-const algorithm = new SecondChance();
-const mmu = new MMU(algorithm);
-
-function main() {
-    generateSentences(5, 5);
-    return;
-
-    const pid = 1;
-    const size = 409600;
-    const ptr = mmu.new(pid, size);
-    // symbolTable.set(ptr, [pid, size]);
-    // console.log('Symbol Table',symbolTable);
-    // console.log(mmu.realMemory);
-    // console.log(mmu.pageTable);
-    console.log('Memory', mmu.realMemory);
-
-    const pid2 = 1;
-    const size2 = 10000;
-    const ptr2 = mmu.new(pid2, size2);
-    // symbolTable.set(ptr, [pid, size]);
-    // console.log('Symbol Table',symbolTable);
-    // console.log(mmu.realMemory);
-    // console.log(mmu.pageTable);
-    console.log('Memory', mmu.realMemory);
-
-   
-
-    mmu.use(ptr);
-    console.log('Memory', mmu.realMemory);
-    console.log('Virtual', mmu.virtualMemory);
-    
-    mmu.use(ptr2);
-    console.log('Memory', mmu.realMemory);
-    console.log('Virtual', mmu.virtualMemory);
-
-    mmu.use(ptr2);
-    console.log('Memory', mmu.realMemory);
-    console.log('Virtual', mmu.virtualMemory);
-    //return;
-    mmu.use(ptr);
-    console.log('Memory', mmu.realMemory);
-    console.log('Virtual', mmu.virtualMemory);
-    return;
-   
-    mmu.delete(ptr);
-    // mmu.kill(pid);
-    console.log('Memory', mmu.realMemory);
-    console.log('Virtual', mmu.virtualMemory);
+function setAlgorithm(algtm: string) {
+    switch (algtm) {
+        case 'fifo':
+            algorithm = new FIFO();
+            break;
+        case 'mru':
+            algorithm = new MRU();
+            break;
+        case 'random':
+            algorithm = new Random();
+            break;
+        case 'sc':
+            algorithm = new SecondChance();
+            break;
+        default:
+            console.error('Algoritmo desconocido');
+    }  
+    mmu = new MMU(algorithm);
 }
 
-function generateSentences(cant_processes: number, cant_instructions: number) {
+function start(seed: string, cant_processes: number, cant_instructions: number, algtm: string) {
+    random = seedrandom(seed);
 
+    setAlgorithm(algtm);
+
+    if(cant_processes <= 0 || cant_instructions <= 0){
+        console.error('Número de procesos o instrucciones inválido');
+        return;
+    }
+    
+    generateInstructions(cant_processes, cant_instructions);
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+}
+
+
+function generateInstructions(cant_processes: number, cant_instructions: number) {
+    let processes = new Map<number, number[]>();
+    let contPtr = 1;
     let instructions = '';
 
-    for (let i = 0; i < cant_processes; i++) {
-        const size = Math.floor(random() * 400000);
+    for (let i = 1; i <= cant_processes; i++) {
+        const size = Math.floor(Math.random() * 400000);
         instructions += `new(${i},${size})\n`;
+        processes.set(i, [contPtr++]);
     }
 
-    for (let i = 0; i < cant_instructions; i++) {
-        const pid = Math.floor(random() * cant_processes);
-        const operation = Math.floor(random() * 3);
+    for (let i = 0; i < cant_instructions - cant_processes; i++) {
+        let pid = Math.floor(Math.random() * cant_processes) + 1;
+        while (!processes.has(pid)) {
+            pid = Math.floor(Math.random() * cant_processes) + 1;
+        }
+
+        let pointers = processes.get(pid)!;
+        if (pointers.length === 0) {
+            continue; 
+        }
+
+        let ptr = pointers[Math.floor(Math.random() * pointers.length)];
+
+        const size = Math.floor(Math.random() * 400000);
+        const operation = Math.floor(Math.random() * 6);
         switch (operation) {
             case 0:
-                instructions += `use(${pid})\n`;
+                instructions += `new(${pid}, ${size})\n`;
+                processes.set(pid, [...pointers, contPtr++]);
                 break;
             case 1:
-                instructions += `delete(${pid})\n`;
+            case 4:
+            case 5:
+                instructions += `use(${ptr})\n`;
                 break;
             case 2:
+                instructions += `delete(${ptr})\n`;
+                processes.set(pid, processes.get(pid)!.filter(p => p !== ptr));
+                break;
+            case 3:
                 instructions += `kill(${pid})\n`;
+                processes.delete(pid);
                 break;
         }
     }
 
     const blob = new Blob([instructions], { type: 'text/plain' });
     saveAs(blob, 'instructions.txt');
-    
 }
 
-function readInstructions(instructions: string) {
+function readInstructions(instructions: string, algtm: string) {
+    setAlgorithm(algtm);
+
     const lines = instructions.split('\n');
 
     lines.forEach(line => {
+        if(isPaused) return;
+
         const match = line.match(/(\w+)\((\d+)(?:,\s*(\d+))?\)/);
         if (match) {
             const operation = match[1];
@@ -132,7 +149,7 @@ function readInstructions(instructions: string) {
     });
 }
 
-export { main, readInstructions };
+export { start, readInstructions, togglePause, generateInstructions };
 
 
 

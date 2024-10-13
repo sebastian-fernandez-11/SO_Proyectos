@@ -1,5 +1,5 @@
 import './App.css'
-import { main, readInstructions } from './Simulator'
+import { start, readInstructions, togglePause } from './Simulator'
 import { useState } from 'react'
 
 function App() {
@@ -17,11 +17,12 @@ function App() {
 
   return (
     <div>
-      <button onClick={() => main()} >Probar</button>
+      <button onClick={() => start()} >Probar</button>
       <div>
         <input type="file" onChange={handleFileChange} />
-        <button onClick={() => readInstructions(fileContent)} >Procesar archivo</button>
+        <button onClick={() => readInstructions(fileContent)}>Procesar archivo</button>
       </div>
+      <button onClick={togglePause()}>Pausar/Reanudar</button>
       <div>
         <h3>Contenido del archivo:</h3>
         <pre>{fileContent}</pre>
