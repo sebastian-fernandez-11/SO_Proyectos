@@ -1,20 +1,18 @@
 import Page from './Page';
-import  AlgorithmStrategy  from './algorithms/AlgorithmStrategy';
+import AlgorithmStrategy from './algorithms/AlgorithmStrategy';
 
-class MMU{
+class MMU {
     realMemory: Page[];
     virtualMemory: Page[];
-    pageTable: Map<number, Page>;
     processTable: Map<number, number[]>;
-    symbolTable : Map<number, number[]>;
+    symbolTable: Map<number, number[]>;
     selectStrategy: AlgorithmStrategy;
     actualPageId: number;
     actualPtr: number;
 
-    constructor(selectStrategy: AlgorithmStrategy){
-        this.realMemory = [];
+    constructor(selectStrategy: AlgorithmStrategy) {
+        this.realMemory = new Array(100).fill(null).map(() => new Page(-1, false, -1));
         this.virtualMemory = [];
-        this.pageTable = new Map();
         this.processTable = new Map();
         this.symbolTable = new Map();
         this.selectStrategy = selectStrategy;
@@ -23,22 +21,28 @@ class MMU{
     }
 
     // Función que realiza el hit para las páginas indicadas 
-    setRealMemory(pageNeeded: number){
-        for(let i = 0; i < pageNeeded; i++){
-            const page = new Page(this.actualPageId++, true, this.realMemory.length); // el address es el indice de la pagina en la memoria real
-            this.realMemory.push(page);
-            this.pageTable.set(this.actualPageId, page);
-           if(this.symbolTable.has(this.actualPtr)){
-               const value = this.symbolTable.get(this.actualPtr);
-               if(value){
-                   value.push(page.id);
-                   this.symbolTable.set(this.actualPtr, value);
-               }
-               else{
-                    console.error('Error al agregar la pagina al symbol table');
-               }
+    setRealMemory(pageNeeded: number) {
+        for (let i = 0; i < pageNeeded; i++) {
+            const address = this.getSpaceIndex();
+            if (address === -1) {
+                console.error('No hay espacio en memoria');
+                return;
             }
-            else{
+
+            const page = new Page(this.actualPageId++, true, address);
+            this.realMemory[address] = page;
+
+            if (this.symbolTable.has(this.actualPtr)) {
+                const value = this.symbolTable.get(this.actualPtr);
+                if (value) {
+                    value.push(page.id);
+                    this.symbolTable.set(this.actualPtr, value);
+                }
+                else {
+                    console.error('Error al agregar la pagina al symbol table');
+                }
+            }
+            else {
                 this.symbolTable.set(this.actualPtr, [page.id]);
             }
 
@@ -46,143 +50,165 @@ class MMU{
     }
 
     // Función que realiza el swap de una página de la memoria real a la memoria virtual
-    swapRealToVirtual(idPageToReplace: number): number{
-        const pageToReplace = this.realMemory.find(page => page.id === idPageToReplace);
-        this.realMemory = this.realMemory.filter(page => page.id !== idPageToReplace);
+    swapRealToVirtual(realAddress: number) {
+        const pageToReplace = this.realMemory[realAddress];
 
         if (pageToReplace) {
             pageToReplace.isInRealMemory = false;
-            pageToReplace.realAddress = null;
-            this.pageTable.set(pageToReplace.id, pageToReplace);
+            pageToReplace.realAddress = -1;
             this.virtualMemory.push(pageToReplace);
         } else {
             console.error('Page to replace not found');
         }
 
+        this.realMemory = this.realMemory.map(page => page.id === pageToReplace.id ? new Page(-1, false, -1) : page);
+
         console.log('Página swuapeada de real a virtual: ', pageToReplace);
-        return idPageToReplace;
     }
 
     // Función que realiza el swap de una página de la memoria virtual a la memoria real
-    // pero sin hacer swap de una página que se ocupe en el momento
-    swapVirtualToReal(page: Page,  ptr: number){
-        page.isInRealMemory = true;
-        page.realAddress = this.realMemory.length;
-
-        if(this.realMemory.length >= 100){
+    swapVirtualToReal(page: Page, ptr: number) {
+        if (this.countFreeSpace() === 0) {
             let idPageToReplace = this.selectStrategy.selectPage(this.realMemory);
-            let value = this.symbolTable.get(ptr);
-            while(value?.find(id => id === idPageToReplace)){
-                idPageToReplace = this.selectStrategy.selectPage(this.realMemory);
-            }
 
             this.swapRealToVirtual(idPageToReplace);
         }
+        const address = this.getSpaceIndex();
+        if (address === -1) {
+            console.error('No hay espacio en memoria');
+            return;
+        }
 
-        this.realMemory.push(page);
+        page.isInRealMemory = true;
+        page.realAddress = address;
+        page.timestamp = Date.now();
+
+        this.realMemory[address] = page;
         this.virtualMemory = this.virtualMemory.filter(p => p.id !== page.id);
-        
+
         console.log('Página swuapeada de virtual a real: ', page);
     }
 
     // Función que busca una página en ambas memorias y la retorna
-    getPage(id: number): Page | undefined{
+    getPage(id: number): Page | undefined {
         let page = this.realMemory.find(p => p.id === id);
-        if(page){
+        if (page) {
             return page;
         }
         page = this.virtualMemory.find(p => p.id === id);
         return page;
     }
 
-    new(pid: number, size: number): number{
+    // Función que busca un espacio en memoria y lo retorna
+    getSpaceIndex(): number {
+        const index = this.realMemory.findIndex(page => page.isInRealMemory === false);
+        return index;
+    }
+
+    // Función que cuenta los espacios libres en memoria
+    countFreeSpace(): number {
+        return this.realMemory.filter(page => page.isInRealMemory === false).length;
+    }
+
+    // Función que revisa que las páginas estén en memoria real 
+    checkPagesInMemory(pagesId: number[]): boolean {
+        for (const id of pagesId) {
+            const page = this.realMemory.find(p => p.id === id);
+            if (!page?.isInRealMemory) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    new(pid: number, size: number): number {
         this.actualPtr++;
         const pageNeeded = Math.ceil(size / 4096);
 
         console.log('Page needed: ', pageNeeded);
+        if (this.getSpaceIndex() === -1 || this.countFreeSpace() < pageNeeded) {
+            console.log('No hay suficiente espacio en memoria');
 
-        if(this.realMemory.length > 100 || this.realMemory.length + pageNeeded > 100){
-            console.log('No hay suficiente espacio en memoria'); 
-
-            while(this.realMemory.length + pageNeeded > 100){
+            while (this.countFreeSpace() < pageNeeded) {
                 this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory));
             }
         }
-        
+
         this.setRealMemory(pageNeeded);
 
         // Agrega el proceso a la tabla de procesos con su ptr
-        if(this.processTable.has(pid)){
+        if (this.processTable.has(pid)) {
             const value = this.processTable.get(pid);
-            if(value){
+            if (value) {
                 value.push(this.actualPtr);
                 this.processTable.set(pid, value);
             }
-            else{
+            else {
                 console.error('Error al agregar el ptr al process table');
             }
         }
-        else{
+        else {
             this.processTable.set(pid, [this.actualPtr]);
         }
 
         return this.actualPtr;
     }
 
-    use(ptr: number){
-        if(this.symbolTable.has(ptr)){
+    use(ptr: number) {
+        if (this.symbolTable.has(ptr)) {
             const value = this.symbolTable.get(ptr);
-            if(value){
-                value.forEach(pageId => {
-                    // const page = this.pageTable.get(pageId);
-                    const page = this.getPage(pageId);
-                    if(page && !page.isInRealMemory){
-                        this.swapVirtualToReal(page, ptr);
-                    }
-                })                
+            if (value) {
+                while (!this.checkPagesInMemory(value)) {
+                    console.log('Páginas no están en memoria real');
+                    value.forEach(pageId => {
+                        const page = this.getPage(pageId);
+                        if (page && !page.isInRealMemory) {
+                            this.swapVirtualToReal(page, ptr);
+                        }
+                    })
+                }
             }
         }
-        else{
+        else {
             console.error('No se encontró el ptr en el symbol table');
         }
     }
 
-    delete(ptr: number){
-        if(this.symbolTable.has(ptr)){
+    delete(ptr: number) {
+        if (this.symbolTable.has(ptr)) {
             console.log('Deleting ptr: ', ptr);
             const value = this.symbolTable.get(ptr);
-            if(value){
+            if (value) {
                 value.forEach(pageId => {
-                    // const page = this.pageTable.get(pageId);
                     const page = this.getPage(pageId);
-                    if(page){
-                        if(page.isInRealMemory){
-                            this.realMemory = this.realMemory.filter(p => p.id !== page.id);
+                    if (page) {
+                        if (page.isInRealMemory) {
+                            this.realMemory = this.realMemory.map(p => p.id === page.id ? new Page(-1, false, -1) : p);
                         }
-                        else{
+                        else {
                             this.virtualMemory = this.virtualMemory.filter(p => p.id !== page.id);
                         }
-                        // this.pageTable.delete(page.id);
                     }
-                })                
+                })
+                this.symbolTable.delete(ptr);
             }
         }
-        else{
+        else {
             console.error('No se encontró el ptr en el symbol table');
         }
     }
 
-    kill(pid: number){
-        if(this.processTable.has(pid)){
+    kill(pid: number) {
+        if (this.processTable.has(pid)) {
             const value = this.processTable.get(pid);
-            if(value){
+            if (value) {
                 value.forEach(ptr => {
                     this.delete(ptr);
                 })
             }
             this.processTable.delete(pid);
         }
-        else{
+        else {
             console.error('No se encontró el pid en el process table');
         }
     }
