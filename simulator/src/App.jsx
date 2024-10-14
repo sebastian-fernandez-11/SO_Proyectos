@@ -1,5 +1,5 @@
 import './App.css'
-import { start, readInstructions, togglePause } from './Simulator'
+import { start, readInstructions } from './Simulator'
 import { useState } from 'react'
 
 function App() {
@@ -22,7 +22,6 @@ function App() {
         <input type="file" onChange={handleFileChange} />
         <button onClick={() => readInstructions(fileContent)}>Procesar archivo</button>
       </div>
-      <button onClick={togglePause()}>Pausar/Reanudar</button>
       <div>
         <h3>Contenido del archivo:</h3>
         <pre>{fileContent}</pre>
