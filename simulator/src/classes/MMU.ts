@@ -30,6 +30,7 @@ class MMU {
             }
 
             const page = new Page(this.actualPageId++, true, address);
+            page.increseMRU();
             this.realMemory[address] = page;
 
             if (this.symbolTable.has(this.actualPtr)) {
@@ -68,11 +69,11 @@ class MMU {
 
     // Función que realiza el swap de una página de la memoria virtual a la memoria real
     swapVirtualToReal(page: Page, ptr: number) {
-        if (this.countFreeSpace() === 0) {
-            let idPageToReplace = this.selectStrategy.selectPage(this.realMemory);
+        // if (this.countFreeSpace() === 0) {
+        //     let idPageToReplace = this.selectStrategy.selectPage(this.realMemory);
 
-            this.swapRealToVirtual(idPageToReplace);
-        }
+        //     this.swapRealToVirtual(idPageToReplace);
+        // }
         const address = this.getSpaceIndex();
         if (address === -1) {
             console.error('No hay espacio en memoria');
@@ -112,15 +113,22 @@ class MMU {
         return this.realMemory.filter(page => page.isInRealMemory === false).length;
     }
 
-    // Función que revisa que las páginas estén en memoria real 
-    checkPagesInMemory(pagesId: number[]): boolean {
-        for (const id of pagesId) {
-            const page = this.realMemory.find(p => p.id === id);
-            if (!page?.isInRealMemory) {
-                return false;
+    // Función que cuenta las páginas que están en virtual de un ptr
+    checkPagesInVirtual(pagesId: number[]): number {
+        let count = 0;
+        pagesId.forEach(pageId => {
+            if (this.virtualMemory.find(p => p.id === pageId)) {
+                count++;
             }
+        });
+        return count;
+    }
+
+    // Función que hace espacio en memoria real
+    makeSpaceMemory(pageNeeded: number) {
+        while (this.countFreeSpace() < pageNeeded) {
+            this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory));
         }
-        return true;
     }
 
     removeChance() {
@@ -135,13 +143,15 @@ class MMU {
         this.actualPtr++;
         const pageNeeded = Math.ceil(size / 4096);
 
+        if(pageNeeded > 100) {
+            console.error('El proceso no cabe en memoria');
+            return -1;
+        }
+
         console.log('Page needed: ', pageNeeded);
         if (this.getSpaceIndex() === -1 || this.countFreeSpace() < pageNeeded) {
             console.log('No hay suficiente espacio en memoria');
-
-            while (this.countFreeSpace() < pageNeeded) {
-                this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory));
-            }
+            this.makeSpaceMemory(pageNeeded);
         }
 
         this.setRealMemory(pageNeeded);
@@ -168,27 +178,30 @@ class MMU {
         if (this.symbolTable.has(ptr)) {
             const value = this.symbolTable.get(ptr);
             if (value) {
-                value.forEach(pageId => {
-                    const page = this.getPage(pageId);
-                    if (page && page.isInRealMemory) {
-                        page.chanceBit = true;
-                    } else if(page) {
-                        page.timestampMRU = Date.now();
-                    } else {
-                        console.log('Entre antes del remove chance');
-                        this.removeChance();
-                        console.log('Hice remove chance');
-                    }
-                })
-                while (!this.checkPagesInMemory(value)) {
-                    console.log('Páginas no están en memoria real');
-                    this.removeChance();
+                // while (!this.checkPagesInMemory(value)) {
+                //     value.forEach(pageId => {
+                //         const page = this.getPage(pageId); 
+                //         if(page){
+                //             page.increseMRU();
+                //         }
+                //         if (page && !page.isInRealMemory) {     
+                //             this.swapVirtualToReal(page, ptr);
+                //         }  
+                //     })
+                // }
+                let pagesInVirtual = this.checkPagesInVirtual(value);
+                while(pagesInVirtual > 0) {
+                    this.makeSpaceMemory(pagesInVirtual);
                     value.forEach(pageId => {
-                        const page = this.getPage(pageId); 
-                        if (page && !page.isInRealMemory) {     
+                        const page = this.getPage(pageId);
+                        if(page){
+                            page.increseMRU();
+                        }
+                        if (page && !page.isInRealMemory) {
                             this.swapVirtualToReal(page, ptr);
-                        } 
-                    })
+                        }
+                    });
+                    pagesInVirtual = this.checkPagesInVirtual(value);
                 }
             }
         }

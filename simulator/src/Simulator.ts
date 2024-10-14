@@ -105,7 +105,6 @@ function readInstructions(instructions: string, algtm: string) {
     const lines = instructions.split('\n');
 
     lines.forEach(line => {
-
         const match = line.match(/(\w+)\((\d+)(?:,\s*(\d+))?\)/);
         if (match) {
             const operation = match[1];
