@@ -1,5 +1,5 @@
 import './App.css'
-import { start, readInstructions, togglePause, generateInstructions } from './Simulator'
+import { start, readInstructions } from './Simulator'
 import { useState } from 'react'
 
 function ConfView() {
@@ -107,7 +107,6 @@ function ConfView() {
 
       <button onClick={handleGenerateInstructions}>Generar archivo</button>
       <button onClick={handleStart}>Empezar la simulación</button>
-      <button onClick={togglePause()}>Pausar/Reanudar</button>
 
       <div>
         <h3>Contenido del archivo:</h3>

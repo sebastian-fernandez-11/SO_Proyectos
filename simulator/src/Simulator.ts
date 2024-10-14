@@ -10,13 +10,10 @@ import SecondChance from "./classes/algorithms/SecondChance";
 import seedrandom from 'seedrandom';
 
 import { saveAs } from 'file-saver';
-import { read, readFileSync } from "fs";
 
 let random: () => number;
 let algorithm: AlgorithmStrategy;
 let mmu: MMU;
-
-let isPaused = false;
 
 function setAlgorithm(algtm: string) {
     switch (algtm) {
@@ -50,11 +47,6 @@ function start(seed: string, cant_processes: number, cant_instructions: number, 
     
     generateInstructions(cant_processes, cant_instructions);
 }
-
-function togglePause() {
-    isPaused = !isPaused;
-}
-
 
 function generateInstructions(cant_processes: number, cant_instructions: number) {
     let processes = new Map<number, number[]>();
@@ -113,7 +105,6 @@ function readInstructions(instructions: string, algtm: string) {
     const lines = instructions.split('\n');
 
     lines.forEach(line => {
-        if(isPaused) return;
 
         const match = line.match(/(\w+)\((\d+)(?:,\s*(\d+))?\)/);
         if (match) {
@@ -148,8 +139,7 @@ function readInstructions(instructions: string, algtm: string) {
         }
     });
 }
-
-export { start, readInstructions, togglePause, generateInstructions };
+export { start, readInstructions };
 
 
 
