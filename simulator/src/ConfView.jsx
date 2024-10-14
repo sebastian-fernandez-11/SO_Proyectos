@@ -60,16 +60,16 @@ function ConfView() {
   }
 
   return (
-    <div>
+    <div className="container">
       <h1>Simulador de algoritmos de Paginación</h1>
       <h2>Configuración de la simulación</h2>
 
-      <div>
+      <div className="input-group">
         <h3>Indique la semilla:</h3>
-        <input type="number" id="semilla" value={seed} onChange={handleSeedChange}/>
+        <input type="number" id="semilla" value={seed} onChange={handleSeedChange} />
       </div>
 
-      <div>
+      <div className="input-group">
         <h3>Seleccione el algoritmo a simular:</h3>
         <select id="algorithm" value={algorithm} onChange={handleAlgorithmChange}>
           <option value="fifo">FIFO</option>
@@ -79,16 +79,13 @@ function ConfView() {
         </select>
       </div>
 
-      <div>
+      <div className="input-group">
         <h3>Seleccione un archivo de instrucciones:</h3>
-        <div>
-          <input type="file" onChange={handleFileChange} />
-          
-        </div>
+        <input type="file" onChange={handleFileChange} />
       </div>
 
-      <div>
-        <h3>Indique la cantidad de procesos: </h3>
+      <div className="input-group">
+        <h3>Indique la cantidad de procesos:</h3>
         <select id="processes" value={processes} onChange={handleProcessesChange}>
           <option value="10">10</option>
           <option value="50">50</option>
@@ -96,7 +93,7 @@ function ConfView() {
         </select>
       </div>
 
-      <div>
+      <div className="input-group">
         <h3>Indique la cantidad de operaciones:</h3>
         <select id="instructions" value={instructions} onChange={handleInstructionsChange}>
           <option value="500">500</option>
@@ -105,15 +102,17 @@ function ConfView() {
         </select>
       </div>
 
-      <button onClick={handleGenerateInstructions}>Generar archivo</button>
-      <button onClick={handleStart}>Empezar la simulación</button>
+      <div className="button-group">
+        <button className="button button-primary" onClick={handleGenerateInstructions}>Generar archivo</button>
+        <button className="button button-secondary" onClick={handleStart}>Empezar la simulación</button>
+      </div>
 
-      <div>
+      <div className="file-content">
         <h3>Contenido del archivo:</h3>
         <pre>{fileContent}</pre>
       </div>
     </div>
-  )
+  );
 }
 
-export default ConfView
+export default ConfView;
