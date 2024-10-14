@@ -6,9 +6,12 @@ class SecondChance implements AlgorithmStrategy {
         let min = Infinity;
         let minIndex = -1;
         realMemory.forEach((page, index) => {
-            if(page.chanceBit === false && page.isInRealMemory && page.timestampFIFO < min){
-                min = page.timestampFIFO;
+            if(page.chanceBit === false && page.isInRealMemory && page.timestampMRU < min){
+                min = page.timestampMRU;
                 minIndex = index;
+            }
+            else if(page.chanceBit === true && page.isInRealMemory){
+                page.chanceBit = false;
             }
         })
 

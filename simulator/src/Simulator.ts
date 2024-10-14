@@ -116,11 +116,13 @@ function readInstructions(instructions: string, algtm: string) {
                     console.log('New process with pid:', id, 'and size:', size);
                     console.log('Types:', typeof id, typeof size);
                     mmu.new(id, size!);
+                    console.log('Memory:', mmu.realMemory);
                     break;
                 case 'use':
                     console.log('Using ptr:', id);
                     console.log('Types:', typeof id);
                     mmu.use(id);
+                    console.log('Memory:', mmu.realMemory);
                     break;
                 case 'delete':
                     console.log('Deleting ptr:', id);

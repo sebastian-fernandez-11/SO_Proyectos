@@ -131,14 +131,6 @@ class MMU {
         }
     }
 
-    removeChance() {
-        this.realMemory.forEach(page => {
-            if (page.chanceBit) {
-                page.chanceBit = false;
-            }
-        });
-    }
-
     new(pid: number, size: number): number {
         this.actualPtr++;
         const pageNeeded = Math.ceil(size / 4096);
@@ -178,27 +170,21 @@ class MMU {
         if (this.symbolTable.has(ptr)) {
             const value = this.symbolTable.get(ptr);
             if (value) {
-                // while (!this.checkPagesInMemory(value)) {
-                //     value.forEach(pageId => {
-                //         const page = this.getPage(pageId); 
-                //         if(page){
-                //             page.increseMRU();
-                //         }
-                //         if (page && !page.isInRealMemory) {     
-                //             this.swapVirtualToReal(page, ptr);
-                //         }  
-                //     })
-                // }
                 let pagesInVirtual = this.checkPagesInVirtual(value);
                 while(pagesInVirtual > 0) {
                     this.makeSpaceMemory(pagesInVirtual);
-                    value.forEach(pageId => {
+                    let contSwaps = 0;
+                    value.forEach((pageId) => {
                         const page = this.getPage(pageId);
                         if(page){
                             page.increseMRU();
                         }
-                        if (page && !page.isInRealMemory) {
+                        if (page && !page.isInRealMemory && contSwaps < pagesInVirtual) {
                             this.swapVirtualToReal(page, ptr);
+                            contSwaps++;
+                        }
+                        else if(page && page.isInRealMemory) {
+                            page.chanceBit = true;
                         }
                     });
                     pagesInVirtual = this.checkPagesInVirtual(value);
