@@ -140,8 +140,4 @@ function readInstructions(instructions: string, algtm: string) {
         }
     });
 }
-export { start, readInstructions };
-
-
-
-
+export { start, readInstructions, mmu };

@@ -1,6 +1,7 @@
-import './App.css'
-import { start, readInstructions } from './Simulator'
+import "../App.css"
+import { start, readInstructions } from '../Simulator'
 import { useState } from 'react'
+import { useNavigate } from "react-router-dom";
 
 function ConfView() {
   const [fileContent, setFileContent] = useState('');
@@ -8,6 +9,7 @@ function ConfView() {
   const [algorithm, setAlgorithm] = useState('fifo');
   const [processes, setProcesses] = useState(10);
   const [instructions, setInstructions] = useState(500);
+  const navigate = useNavigate();
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -55,7 +57,8 @@ function ConfView() {
       alert('Debe seleccionar un algoritmo');
       return;
     }
-
+    
+    navigate('/simulation');
     readInstructions(fileContent, algorithm);
   }
 
