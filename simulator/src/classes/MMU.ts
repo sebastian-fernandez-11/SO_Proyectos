@@ -25,7 +25,7 @@ class MMU {
     setUsesArray(usesArray: number[]) {
         this.usesArray = usesArray;
     }
-
+    
     // Función que realiza el hit para las páginas indicadas 
     setRealMemory(pageNeeded: number) {
         for (let i = 0; i < pageNeeded; i++) {
@@ -181,9 +181,6 @@ class MMU {
         if (this.symbolTable.has(ptr)) {
             const value = this.symbolTable.get(ptr);
             if (value) {
-                if(this.selectStrategy.type === 'Optimal'){
-                    this.usesArray.shift();
-                }
                 let pagesInVirtual = this.checkPagesInVirtual(value);
                 while(pagesInVirtual > 0) {
                     this.makeSpaceMemory(pagesInVirtual);
@@ -202,6 +199,9 @@ class MMU {
                         }
                     });
                     pagesInVirtual = this.checkPagesInVirtual(value);
+                }
+                if(this.selectStrategy.type === 'Optimal'){
+                    this.usesArray.shift();
                 }
             }
         }

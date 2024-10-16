@@ -99,11 +99,11 @@ function generateInstructions(cant_processes: number, cant_instructions: number)
     saveAs(blob, 'instructions.txt');
 }
 
-function readInstructions(instructions: string) {
+async function readInstructions(instructions: string) {
 
     const lines = instructions.split('\n');
 
-    lines.forEach(line => {
+    lines.forEach(async line => {
         const match = line.match(/(\w+)\((\d+)(?:,\s*(\d+))?\)/);
         if (match) {
             const operation = match[1];
@@ -114,24 +114,34 @@ function readInstructions(instructions: string) {
                 case 'new':
                     console.log('New process with pid:', id, 'and size:', size);
                     console.log('Types:', typeof id, typeof size);
-                    mmu.new(id, size!);
+                    await Promise.all([mmu.new(id, size!), optimalMMU.new(id, size!)]);
+                    // mmu.new(id, size!);
+                    // optimalMMU.new(id, size!);
                     console.log('Memory:', mmu.realMemory);
+                    console.log('Memory Optimal:', optimalMMU.realMemory);
                     break;
                 case 'use':
                     console.log('Using ptr:', id);
                     console.log('Types:', typeof id);
-                    mmu.use(id);
+                    await Promise.all([mmu.use(id), optimalMMU.use(id)]);
+                    // mmu.use(id);
+                    // optimalMMU.use(id);
                     console.log('Memory:', mmu.realMemory);
+                    console.log('Memory Optimal:', optimalMMU.realMemory);
                     break;
                 case 'delete':
                     console.log('Deleting ptr:', id);
                     console.log('Types:', typeof id);
-                    mmu.delete(id);
+                    await Promise.all([mmu.delete(id), optimalMMU.delete(id)]);
+                    // mmu.delete(id);
+                    // optimalMMU.delete(id);
                     break;
                 case 'kill':
                     console.log('Killing pid:', id);
                     console.log('Types:', typeof id);
-                    mmu.kill(id);
+                    await Promise.all([mmu.kill(id), optimalMMU.kill(id)]);
+                    // mmu.kill(id);
+                    // optimalMMU.kill(id);
                     break;
                 default:
                     console.error(`Operación desconocida: ${operation}`);
@@ -155,8 +165,6 @@ function getUsesOptimal(instructions: string): number[] {
 function simulate(algtm: string, instructions: string) {
     setAlgorithm(algtm);
     
-    mmu.selectStrategy = new Optimal();
-
     optimalMMU = new MMU(new Optimal());
     optimalMMU.setUsesArray(getUsesOptimal(instructions));
 
