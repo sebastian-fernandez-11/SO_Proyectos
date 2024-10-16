@@ -2,6 +2,8 @@ import  AlgorithmStrategy  from './AlgorithmStrategy'
 import Page from '../Page'
 
 class MRU implements AlgorithmStrategy {
+    type = 'MRU';
+    
     selectPage(realMemory: Page[]): number {
         let max = -Infinity;
         let maxIndex = -1;

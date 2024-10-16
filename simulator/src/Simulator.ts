@@ -6,6 +6,7 @@ import Random from "./classes/algorithms/Random";
 import FIFO from "./classes/algorithms/FIFO"
 import MRU from "./classes/algorithms/MRU"
 import SecondChance from "./classes/algorithms/SecondChance";
+import Optimal from "./classes/algorithms/Optimal";
 
 import seedrandom from 'seedrandom';
 
@@ -14,6 +15,7 @@ import { saveAs } from 'file-saver';
 let random: () => number;
 let algorithm: AlgorithmStrategy;
 let mmu: MMU;
+let optimalMMU: MMU;
 
 function setAlgorithm(algtm: string) {
     switch (algtm) {
@@ -35,10 +37,8 @@ function setAlgorithm(algtm: string) {
     mmu = new MMU(algorithm);
 }
 
-function start(seed: string, cant_processes: number, cant_instructions: number, algtm: string) {
+function makeInstructionsFile(seed: string, cant_processes: number, cant_instructions: number) {
     random = seedrandom(seed);
-
-    setAlgorithm(algtm);
 
     if(cant_processes <= 0 || cant_instructions <= 0){
         console.error('Número de procesos o instrucciones inválido');
@@ -99,8 +99,7 @@ function generateInstructions(cant_processes: number, cant_instructions: number)
     saveAs(blob, 'instructions.txt');
 }
 
-function readInstructions(instructions: string, algtm: string) {
-    setAlgorithm(algtm);
+function readInstructions(instructions: string) {
 
     const lines = instructions.split('\n');
 
@@ -140,4 +139,34 @@ function readInstructions(instructions: string, algtm: string) {
         }
     });
 }
-export { start, readInstructions, mmu };
+
+function getUsesOptimal(instructions: string): number[] {
+    let usesLines = instructions.split('\n').filter(line => line.includes('use'));
+    let uses: number[] = [];
+
+    usesLines.forEach(line => {
+        let ptr = line.split('(')[1].split(')')[0];
+        uses.push(parseInt(ptr));
+    });
+
+    return uses;
+}
+
+function simulate(algtm: string, instructions: string) {
+    setAlgorithm(algtm);
+    
+    mmu.selectStrategy = new Optimal();
+
+    optimalMMU = new MMU(new Optimal());
+    optimalMMU.setUsesArray(getUsesOptimal(instructions));
+
+    console.log('Optimal uses:', optimalMMU.usesArray);
+    //return;
+    readInstructions(instructions);
+}
+
+export { makeInstructionsFile, simulate, mmu, optimalMMU };
+
+
+
+

@@ -1,5 +1,5 @@
-import "../App.css"
-import { start, readInstructions } from '../Simulator'
+import '../App.css'
+import { makeInstructionsFile, simulate  } from '../Simulator'
 import { useState } from 'react'
 import { useNavigate } from "react-router-dom";
 
@@ -45,7 +45,7 @@ function ConfView() {
       return;
     }
 
-    start(seed, processes, instructions, algorithm);
+    makeInstructionsFile(seed, processes, instructions);
   }
 
   const handleStart = () => {
@@ -59,7 +59,7 @@ function ConfView() {
     }
     
     navigate('/simulation');
-    readInstructions(fileContent, algorithm);
+    simulate(algorithm, fileContent);
   }
 
   return (

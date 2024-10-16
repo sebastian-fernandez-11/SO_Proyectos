@@ -9,6 +9,7 @@ class MMU {
     selectStrategy: AlgorithmStrategy;
     actualPageId: number;
     actualPtr: number;
+    usesArray: number[];
 
     constructor(selectStrategy: AlgorithmStrategy) {
         this.realMemory = new Array(100).fill(null).map(() => new Page(-1, false, -1));
@@ -18,6 +19,11 @@ class MMU {
         this.selectStrategy = selectStrategy;
         this.actualPageId = 1;
         this.actualPtr = 0;
+        this.usesArray = [];
+    }
+
+    setUsesArray(usesArray: number[]) {
+        this.usesArray = usesArray;
     }
 
     // Función que realiza el hit para las páginas indicadas 
@@ -127,7 +133,12 @@ class MMU {
     // Función que hace espacio en memoria real
     makeSpaceMemory(pageNeeded: number) {
         while (this.countFreeSpace() < pageNeeded) {
-            this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory));
+            if(this.selectStrategy.type === 'Optimal'){
+                this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory, this.usesArray, this.symbolTable));
+            }
+            else {
+                this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory, [], this.symbolTable));
+            }
         }
     }
 
@@ -170,6 +181,9 @@ class MMU {
         if (this.symbolTable.has(ptr)) {
             const value = this.symbolTable.get(ptr);
             if (value) {
+                if(this.selectStrategy.type === 'Optimal'){
+                    this.usesArray.shift();
+                }
                 let pagesInVirtual = this.checkPagesInVirtual(value);
                 while(pagesInVirtual > 0) {
                     this.makeSpaceMemory(pagesInVirtual);

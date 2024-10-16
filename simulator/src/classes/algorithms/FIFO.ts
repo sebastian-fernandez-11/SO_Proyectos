@@ -2,6 +2,8 @@ import  AlgorithmStrategy  from './AlgorithmStrategy'
 import Page from '../Page'
 
 class FIFO implements AlgorithmStrategy {
+    type = 'FIFO';
+    
     selectPage(realMemory: Page[]): number {
         let min = Infinity;
         let minIndex = -1;

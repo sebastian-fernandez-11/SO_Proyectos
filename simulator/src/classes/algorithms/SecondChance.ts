@@ -2,6 +2,8 @@ import  AlgorithmStrategy  from './AlgorithmStrategy'
 import Page from '../Page'
 
 class SecondChance implements AlgorithmStrategy {
+    type = 'SecondChance';
+    
     selectPage(realMemory: Page[]): number {
         let min = Infinity;
         let minIndex = -1;
