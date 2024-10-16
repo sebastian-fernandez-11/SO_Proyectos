@@ -4,12 +4,15 @@ import AlgorithmStrategy from './algorithms/AlgorithmStrategy';
 class MMU {
     realMemory: Page[];
     virtualMemory: Page[];
-    processTable: Map<number, number[]>;
-    symbolTable: Map<number, number[]>;
+    processTable: Map<number, number[]>; // key: pid, value: [ptr]
+    symbolTable: Map<number, number[]>; // key: ptr, value: [pageId]
+    memorySizeTable: Map<number, number>; // key: ptr, value: memorySize
     selectStrategy: AlgorithmStrategy;
     actualPageId: number;
     actualPtr: number;
     usesArray: number[];
+    actualRealMemoryUse: number;
+    actualVirtualMemoryUse: number;
 
     constructor(selectStrategy: AlgorithmStrategy) {
         this.realMemory = new Array(100).fill(null).map(() => new Page(-1, false, -1));
@@ -20,6 +23,9 @@ class MMU {
         this.actualPageId = 1;
         this.actualPtr = 0;
         this.usesArray = [];
+        this.memorySizeTable = new Map();
+        this.actualRealMemoryUse = 0;
+        this.actualVirtualMemoryUse = 0;
     }
 
     setUsesArray(usesArray: number[]) {
@@ -142,6 +148,22 @@ class MMU {
         }
     }
 
+    // Funcion para calcular el tamaño de la memoria real
+    calculateMemoryUsage() {
+        this.actualRealMemoryUse = 0;
+        this.actualVirtualMemoryUse = 0;
+       
+        this.realMemory.forEach(page => {
+            if (page.isInRealMemory) {
+                this.actualRealMemoryUse += 4;
+            }
+        });
+
+        this.virtualMemory.forEach(page => {
+            this.actualVirtualMemoryUse += 4;
+        });
+    }
+
     new(pid: number, size: number): number {
         this.actualPtr++;
         const pageNeeded = Math.ceil(size / 4096);
@@ -174,6 +196,11 @@ class MMU {
             this.processTable.set(pid, [this.actualPtr]);
         }
 
+        this.memorySizeTable.set(this.actualPtr, size / 1000);
+        console.log('Tama;o en bytes: ', size);
+        console.log('Tamaño en KB: ', size / 1000);
+        this.calculateMemoryUsage();
+        console.log('Tamaño de memoria real actual: ', this.actualRealMemorySize);
         return this.actualPtr;
     }
 
@@ -203,6 +230,8 @@ class MMU {
                 if(this.selectStrategy.type === 'Optimal'){
                     this.usesArray.shift();
                 }
+                this.calculateMemoryUsage();
+                console.log('Tamaño de memoria real actual: ', this.actualRealMemorySize);
             }
         }
         else {
@@ -227,6 +256,9 @@ class MMU {
                     }
                 })
                 this.symbolTable.delete(ptr);
+                this.memorySizeTable.delete(ptr);
+                this.calculateMemoryUsage();
+                console.log('Tamaño de memoria real actual: ', this.actualRealMemorySize);
             }
         }
         else {
@@ -240,7 +272,7 @@ class MMU {
             if (value) {
                 value.forEach(ptr => {
                     if(this.symbolTable.has(ptr)) {
-                        this.delete(ptr);
+                        this.delete(ptr);                       
                     }
                 })
             }
