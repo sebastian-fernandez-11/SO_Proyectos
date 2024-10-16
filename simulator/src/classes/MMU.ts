@@ -200,7 +200,7 @@ class MMU {
         console.log('Tama;o en bytes: ', size);
         console.log('Tamaño en KB: ', size / 1000);
         this.calculateMemoryUsage();
-        console.log('Tamaño de memoria real actual: ', this.actualRealMemorySize);
+        console.log('Tamaño de memoria real actual: ', this.actualRealMemoryUse);
         return this.actualPtr;
     }
 
@@ -231,7 +231,7 @@ class MMU {
                     this.usesArray.shift();
                 }
                 this.calculateMemoryUsage();
-                console.log('Tamaño de memoria real actual: ', this.actualRealMemorySize);
+                console.log('Tamaño de memoria real actual: ', this.actualRealMemoryUse);
             }
         }
         else {
@@ -258,7 +258,7 @@ class MMU {
                 this.symbolTable.delete(ptr);
                 this.memorySizeTable.delete(ptr);
                 this.calculateMemoryUsage();
-                console.log('Tamaño de memoria real actual: ', this.actualRealMemorySize);
+                console.log('Tamaño de memoria real actual: ', this.actualRealMemoryUse);
             }
         }
         else {
