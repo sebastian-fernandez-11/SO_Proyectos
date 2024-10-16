@@ -54,7 +54,7 @@ function generateInstructions(cant_processes: number, cant_instructions: number)
     let instructions = '';
 
     for (let i = 1; i <= cant_processes; i++) {
-        const size = Math.floor(Math.random() * 400000);
+        const size = Math.floor(Math.random() * 100000);
         instructions += `new(${i},${size})\n`;
         processes.set(i, [contPtr++]);
     }
