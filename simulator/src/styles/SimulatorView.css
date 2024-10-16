@@ -1,0 +1,31 @@
+.ram-container{
+
+}
+
+.ram-cell{
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #000;
+}
+
+.ram-section{
+    display: flex;
+    flex-direction: row;
+}
+
+.tables-container{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    
+    
+}
+
+.table-section{
+    
+}
+
+.table{
+    overflow-y: auto;
+    max-height: 315px;
+}
