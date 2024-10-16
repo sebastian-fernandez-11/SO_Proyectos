@@ -1,12 +1,13 @@
 import '../App.css'
-import { makeInstructionsFile, simulate  } from '../Simulator'
+import { configSimulation, makeInstructionsFile } from '../Simulator'
 import { useState } from 'react'
 import { useNavigate } from "react-router-dom";
 
+
 function ConfView() {
-  const [fileContent, setFileContent] = useState('');
   const [seed, setSeed] = useState('');
   const [algorithm, setAlgorithm] = useState('fifo');
+  const [fileContent, setFileContent] = useState('');
   const [processes, setProcesses] = useState(10);
   const [instructions, setInstructions] = useState(500);
   const navigate = useNavigate();
@@ -48,18 +49,19 @@ function ConfView() {
     makeInstructionsFile(seed, processes, instructions);
   }
 
-  const handleStart = () => {
+  const handleContinue = () => {
     if (fileContent === '') {
       alert('Primero debe cargar un archivo de instrucciones');
       return;
     }
-    if(algorithm === ''){
+    
+    if (algorithm === '') {
       alert('Debe seleccionar un algoritmo');
       return;
     }
     
+    configSimulation(algorithm, fileContent);
     navigate('/simulation');
-    simulate(algorithm, fileContent);
   }
 
   return (
@@ -107,7 +109,7 @@ function ConfView() {
 
       <div className="button-group">
         <button className="button button-primary" onClick={handleGenerateInstructions}>Generar archivo</button>
-        <button className="button button-secondary" onClick={handleStart}>Empezar la simulación</button>
+        <button className="button button-secondary" onClick={handleContinue}>Continuar</button>
       </div>
 
       <div className="file-content">

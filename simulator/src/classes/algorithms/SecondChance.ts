@@ -2,7 +2,7 @@ import  AlgorithmStrategy  from './AlgorithmStrategy'
 import Page from '../Page'
 
 class SecondChance implements AlgorithmStrategy {
-    type = 'SecondChance';
+    type = 'Second Chance';
     
     selectPage(realMemory: Page[]): number {
         let min = Infinity;

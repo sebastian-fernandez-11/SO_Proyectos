@@ -16,6 +16,7 @@ let random: () => number;
 let algorithm: AlgorithmStrategy;
 let mmu: MMU;
 let optimalMMU: MMU;
+let instructions: string;
 
 function setAlgorithm(algtm: string) {
     switch (algtm) {
@@ -99,7 +100,9 @@ function generateInstructions(cant_processes: number, cant_instructions: number)
     saveAs(blob, 'instructions.txt');
 }
 
-async function readInstructions(instructions: string) {
+/*async function readInstructions(setMmuState: (state: MMU) => void) {
+    optimalMMU.setUsesArray(getUsesOptimal(instructions));
+    console.log('Optimal uses:', optimalMMU.usesArray);
 
     const lines = instructions.split('\n');
 
@@ -114,17 +117,20 @@ async function readInstructions(instructions: string) {
                 case 'new':
                     console.log('New process with pid:', id, 'and size:', size);
                     console.log('Types:', typeof id, typeof size);
-                    await Promise.all([mmu.new(id, size!), optimalMMU.new(id, size!)]);
-                    // mmu.new(id, size!);
+                    //await Promise.all([mmu.new(id, size!), optimalMMU.new(id, size!)]);
+                     mmu.new(id, size!);
+                     setMmuState(mmu);
                     // optimalMMU.new(id, size!);
+
                     console.log('Memory:', mmu.realMemory);
                     console.log('Memory Optimal:', optimalMMU.realMemory);
                     break;
                 case 'use':
                     console.log('Using ptr:', id);
                     console.log('Types:', typeof id);
-                    await Promise.all([mmu.use(id), optimalMMU.use(id)]);
-                    // mmu.use(id);
+                    //await Promise.all([mmu.use(id), optimalMMU.use(id)]);
+                     mmu.use(id);
+                     setMmuState(mmu);
                     // optimalMMU.use(id);
                     console.log('Memory:', mmu.realMemory);
                     console.log('Memory Optimal:', optimalMMU.realMemory);
@@ -132,15 +138,17 @@ async function readInstructions(instructions: string) {
                 case 'delete':
                     console.log('Deleting ptr:', id);
                     console.log('Types:', typeof id);
-                    await Promise.all([mmu.delete(id), optimalMMU.delete(id)]);
-                    // mmu.delete(id);
+                    // await Promise.all([mmu.delete(id), optimalMMU.delete(id)]);
+                    mmu.delete(id);
+                    setMmuState(mmu);
                     // optimalMMU.delete(id);
                     break;
                 case 'kill':
                     console.log('Killing pid:', id);
                     console.log('Types:', typeof id);
-                    await Promise.all([mmu.kill(id), optimalMMU.kill(id)]);
-                    // mmu.kill(id);
+                    // await Promise.all([mmu.kill(id), optimalMMU.kill(id)]);
+                    mmu.kill(id);
+                    setMmuState(mmu);
                     // optimalMMU.kill(id);
                     break;
                 default:
@@ -148,7 +156,7 @@ async function readInstructions(instructions: string) {
             }
         }
     });
-}
+}*/
 
 function getUsesOptimal(instructions: string): number[] {
     let usesLines = instructions.split('\n').filter(line => line.includes('use'));
@@ -162,18 +170,14 @@ function getUsesOptimal(instructions: string): number[] {
     return uses;
 }
 
-function simulate(algtm: string, instructions: string) {
+function configSimulation(algtm: string, inst: string) {
     setAlgorithm(algtm);
-    
     optimalMMU = new MMU(new Optimal());
-    optimalMMU.setUsesArray(getUsesOptimal(instructions));
-
-    console.log('Optimal uses:', optimalMMU.usesArray);
-    //return;
-    readInstructions(instructions);
+   
+    instructions = inst;
 }
 
-export { makeInstructionsFile, simulate, mmu, optimalMMU };
+export { makeInstructionsFile, configSimulation, mmu, optimalMMU, /*readInstructions,*/ algorithm, instructions, getUsesOptimal };
 
 
 
