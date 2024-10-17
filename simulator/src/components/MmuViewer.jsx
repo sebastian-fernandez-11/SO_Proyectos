@@ -1,9 +1,21 @@
 import '../styles/SimulatorView.css';
 
-function MmuViewer({ mmu, algorithm }) {
+function MmuViewer({ mmu, algorithm, colors, symbolTable }) {
     const totalMemory = [...mmu.realMemory, ...mmu.virtualMemory];
+
+    const getColor = (id) => {
+        for (let [ptr, value] of symbolTable) {
+            if (value.includes(id)) {
+                if (colors.has(ptr)) {
+                    return colors.get(ptr);
+                }
+            }
+        }
+        return '#FFFFFF'; // Color por defecto si no se encuentra
+    }
+
     return (
-        <div>
+        <>
             <h2>{'MMU - ' + algorithm}</h2>
             <div className="table">
                 <table >
@@ -16,7 +28,7 @@ function MmuViewer({ mmu, algorithm }) {
                     </thead>
                     <tbody>
                         {totalMemory.map((page, index) => (
-                            <tr key={index}>
+                            <tr key={index} style={{ backgroundColor: getColor(page.id) }}>
                                 <td>{page.id === -1 ? ' ': page.id}</td>
                                 <td>{page.realAddress === -1 ? ' ': page.realAddress}</td>
                                 <td>{page.id === -1 ? ' ':                                
@@ -26,7 +38,7 @@ function MmuViewer({ mmu, algorithm }) {
                     </tbody>
                 </table>
             </div>
-        </div>
+        </>
     );
 }
 

@@ -5,8 +5,10 @@ function ProcessInfo({ processes, time }) {
         <div className="process-info-table">
             <table>
                 <thead>
-                    <th>Procesos</th>
-                    <th>Tiempo de simulación</th>
+                    <tr>
+                        <th>Procesos</th>
+                        <th>Tiempo de simulación</th>
+                    </tr>
                 </thead>
                 <tbody>
                     <tr>

@@ -19,3 +19,4 @@ class FIFO implements AlgorithmStrategy {
 }
 
 export default FIFO;
+
