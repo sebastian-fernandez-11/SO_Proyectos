@@ -14,11 +14,12 @@ function MmuViewer({ mmu, algorithm }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {mmu.realMemory.map(page => (
-                            <tr key={page.id}>
-                                <td>{page.id}</td>
-                                <td>{page.realAddress}</td>
-                                <td>{page.isInRealMemory ? 'Yes' : 'No'}</td>
+                        {mmu.realMemory.map((page, index) => (
+                            <tr key={index}>
+                                <td>{page.id === -1 ? ' ': page.id}</td>
+                                <td>{page.realAddress === -1 ? ' ': page.realAddress}</td>
+                                <td>{page.id === -1 ? ' ':                                
+                                page.isInRealMemory ? 'Sí' : 'No'}</td>
                             </tr>
                         ))}
                     </tbody>

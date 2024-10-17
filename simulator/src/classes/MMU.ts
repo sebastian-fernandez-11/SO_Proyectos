@@ -10,6 +10,9 @@ class MMU {
     actualPageId: number;
     actualPtr: number;
     usesArray: number[];
+    clock: number;
+    trashing: number;
+    actualUsePtr: number;
 
     constructor(selectStrategy: AlgorithmStrategy) {
         this.realMemory = new Array(100).fill(null).map(() => new Page(-1, false, -1));
@@ -20,6 +23,9 @@ class MMU {
         this.actualPageId = 1;
         this.actualPtr = 0;
         this.usesArray = [];
+        this.clock = 0;
+        this.trashing = 0;
+        this.actualUsePtr = -1;
     }
 
     setUsesArray(usesArray: number[]) {
@@ -38,6 +44,7 @@ class MMU {
             const page = new Page(this.actualPageId++, true, address);
             page.increseMRU();
             this.realMemory[address] = page;
+            this.clock++;
 
             if (this.symbolTable.has(this.actualPtr)) {
                 const value = this.symbolTable.get(this.actualPtr);
@@ -66,9 +73,12 @@ class MMU {
             this.virtualMemory.push(pageToReplace);
         } else {
             console.error('Page to replace not found');
+            return;
         }
 
         this.realMemory = this.realMemory.map(page => page.id === pageToReplace.id ? new Page(-1, false, -1) : page);
+        this.clock += 5;
+        this.trashing += 5;
 
         console.log('Página swuapeada de real a virtual: ', pageToReplace);
     }
@@ -134,10 +144,10 @@ class MMU {
     makeSpaceMemory(pageNeeded: number) {
         while (this.countFreeSpace() < pageNeeded) {
             if(this.selectStrategy.type === 'Optimal'){
-                this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory, this.usesArray, this.symbolTable));
+                this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory, this.usesArray, this.symbolTable, this.actualUsePtr));
             }
             else {
-                this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory, [], this.symbolTable));
+                this.swapRealToVirtual(this.selectStrategy.selectPage(this.realMemory, [], this.symbolTable, -1));
             }
         }
     }
@@ -180,10 +190,13 @@ class MMU {
     use(ptr: number) {
         if (this.symbolTable.has(ptr)) {
             const value = this.symbolTable.get(ptr);
+            this.actualUsePtr = ptr;
             if (value) {
                 let pagesInVirtual = this.checkPagesInVirtual(value);
                 while(pagesInVirtual > 0) {
-                    this.makeSpaceMemory(pagesInVirtual);
+                    // while(pagesInVirtual > 0 && this.countFreeSpace() === 0) {
+                        this.makeSpaceMemory(pagesInVirtual);
+                    // }
                     let contSwaps = 0;
                     value.forEach((pageId) => {
                         const page = this.getPage(pageId);

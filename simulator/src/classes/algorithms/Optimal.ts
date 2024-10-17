@@ -4,7 +4,7 @@ import Page from "../Page";
 class Optimal implements AlgorithmStrategy {
     type = 'Optimal';
 
-    selectPage(realMemory: Page[], usesArray: number[], symbolTable: Map<number, number[]>): number {
+    selectPage(realMemory: Page[], usesArray: number[], symbolTable: Map<number, number[]>, actualUsePtr: number): number {
         let pointers: number[] = [];
         // Búsqueda de punteros que estén en memoria real
         for (let page of realMemory) {
@@ -31,6 +31,9 @@ class Optimal implements AlgorithmStrategy {
 
         // Si todos los punteros de la memoria se usan, se selecciona el que se usará más adelante
         for(let i = usesArray.length - 1; i >= 0; i--) {
+            // if (usesArray[i] === actualUsePtr) {
+            //     continue;
+            // }
             for (let page of realMemory) {
                 if (page.isInRealMemory && symbolTable.get(usesArray[i])?.includes(page.id)) {
                     return page.realAddress;

@@ -11,7 +11,7 @@ function ProcessInfo({ processes, time }) {
                 <tbody>
                     <tr>
                         <td>{processes}</td>
-                        <td>{time}</td>
+                        <td>{time}s</td>
                     </tr>
                 </tbody>
             </table>

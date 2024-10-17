@@ -5,8 +5,8 @@ function RamViewer({ mmu, algorithm }) {
         <div>
             <h2>{'RAM - ' + algorithm}</h2>
             <div className="ram-section">
-                {mmu.realMemory.map(page => (
-                <div key={page.id} className="ram-cell">{page.id}</div>
+                {mmu.realMemory.map((page, index) => (
+                <div key={index} className="ram-cell">{page.id === -1 ? ' ': page.id}</div>
                 ))}
             </div>
         </div>

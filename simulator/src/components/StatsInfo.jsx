@@ -14,8 +14,7 @@ function StatsInfo({ pagesLoaded, pagesUnloead, trashing, fragmentation }) {
                     <tr>
                         <td>{pagesLoaded}</td>
                         <td>{pagesUnloead}</td>
-                        <td>{trashing}</td>
-                        <td>{trashing}</td>
+                        <td>{trashing}s</td>
                         <td>{fragmentation + 'KB'}</td>
                     </tr>
                 </tbody>
