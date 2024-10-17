@@ -126,7 +126,7 @@ function SimulatorView() {
                     <div className="table-section">
                         <MmuViewer mmu={mmuState} algorithm={algorithm.type} colors={colors} symbolTable={mmuState.symbolTable}/>
                         <ProcessInfo processes={mmuState.activeProcess} time={mmuState.clock} />
-                        <RamInfo ram={mmuState.actualRealMemoryUse} vram={mmuState.actualRealMemoryUse} />
+                        <RamInfo ram={mmuState.actualRealMemoryUse} vram={mmuState.actualVirtualMemoryUse} />
                         <StatsInfo pagesLoaded={mmuState.loadedPages} unloadedPages={mmuState.unloadedPages} trashing={mmuState.trashing} time={mmuState.clock} fragmentation={mmuState.fragmentation} />
                     </div>
                 </div>
