@@ -1,6 +1,6 @@
 import '../styles/SimulatorView.css';
 
-function StatsInfo({ pagesLoaded, pagesUnloead, trashing, fragmentation }) {
+function StatsInfo({ pagesLoaded, unloadedPages, trashing, time, fragmentation }) {
     return (
         <div className="stats-info-table">
             <table>
@@ -13,8 +13,9 @@ function StatsInfo({ pagesLoaded, pagesUnloead, trashing, fragmentation }) {
                 <tbody>
                     <tr>
                         <td>{pagesLoaded}</td>
-                        <td>{pagesUnloead}</td>
+                        <td>{unloadedPages}</td>
                         <td>{trashing}s</td>
+                        <td>{Math.round((100 / time) * trashing) + '%'}</td>
                         <td>{fragmentation + 'KB'}</td>
                     </tr>
                 </tbody>

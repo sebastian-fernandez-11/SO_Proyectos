@@ -16,6 +16,10 @@ class MMU {
     actualUsePtr: number;
     actualRealMemoryUse: number;
     actualVirtualMemoryUse: number;
+    activeProcess: number;
+    loadedPages: number;
+    unloadedPages: number;
+    fragmentation: number;
 
     constructor(selectStrategy: AlgorithmStrategy) {
         this.realMemory = new Array(100).fill(null).map(() => new Page(-1, false, -1));
@@ -32,6 +36,10 @@ class MMU {
         this.memorySizeTable = new Map();
         this.actualRealMemoryUse = 0;
         this.actualVirtualMemoryUse = 0;
+        this.activeProcess = 0;
+        this.loadedPages = 0;
+        this.unloadedPages = 0;
+        this.fragmentation = 0;
     }
 
     setUsesArray(usesArray: number[]) {
@@ -158,7 +166,7 @@ class MMU {
         }
     }
 
-    // Funcion para calcular el tamaño de la memoria real
+    // Funcion para calcular el uso de las memorias
     calculateMemoryUsage() {
         this.actualRealMemoryUse = 0;
         this.actualVirtualMemoryUse = 0;
@@ -174,10 +182,41 @@ class MMU {
         });
     }
 
+    // Funcion para calcular el numero de procesos activos
+    calculateActiveProcess() {
+        this.activeProcess = this.processTable.size;
+    }
+
+    // Funcion para calcular el numero de paginas cargadas y descargadas
+    calculatePages() {
+        this.loadedPages = 0;
+        this.unloadedPages = 0;
+
+        for (const page of this.realMemory) {
+            if(page.isInRealMemory){
+                this.loadedPages++;
+            }   
+        }
+
+        this.unloadedPages = this.virtualMemory.length;
+        console.log('Páginas no cargadas: ', this.unloadedPages);
+    }
+
+    // Funcion para calcular la cantidad de fragmentacion
+    calculateFragmentation() {
+        this.fragmentation = 0;
+        for (const ptr of this.symbolTable.keys()) {
+            const numPages = this.symbolTable.get(ptr)?.length;
+            if(numPages) {
+                this.fragmentation += Math.round((numPages * 4)  - (this.memorySizeTable.get(ptr) || 0 * 1024));
+            }
+        }
+    }
+
     new(pid: number, size: number): number {
         this.actualPtr++;
         const pageNeeded = Math.ceil(size / 4096);
-
+        
         if(pageNeeded > 100) {
             console.error('El proceso no cabe en memoria');
             return -1;
@@ -206,11 +245,14 @@ class MMU {
             this.processTable.set(pid, [this.actualPtr]);
         }
 
-        this.memorySizeTable.set(this.actualPtr, size / 1000);
+        this.memorySizeTable.set(this.actualPtr, size / 1024);
         console.log('Tama;o en bytes: ', size);
-        console.log('Tamaño en KB: ', size / 1000);
+        console.log('Tamaño en KB: ', size / 1024);
         this.calculateMemoryUsage();
         console.log('Tamaño de memoria real actual: ', this.actualRealMemoryUse);
+        this.calculateActiveProcess();
+        this.calculatePages();
+        this.calculateFragmentation();
         return this.actualPtr;
     }
 
@@ -244,6 +286,7 @@ class MMU {
                     this.usesArray.shift();
                 }
                 this.calculateMemoryUsage();
+                this.calculatePages();
                 console.log('Tamaño de memoria real actual: ', this.actualRealMemoryUse);
             }
         }
@@ -271,6 +314,8 @@ class MMU {
                 this.symbolTable.delete(ptr);
                 this.memorySizeTable.delete(ptr);
                 this.calculateMemoryUsage();
+                this.calculatePages();
+                this.calculateFragmentation();
                 console.log('Tamaño de memoria real actual: ', this.actualRealMemoryUse);
             }
         }
@@ -290,6 +335,8 @@ class MMU {
                 })
             }
             this.processTable.delete(pid);
+            this.calculateActiveProcess();
+            this.calculatePages();
         }
         else {
             console.error('No se encontró el pid en el process table');

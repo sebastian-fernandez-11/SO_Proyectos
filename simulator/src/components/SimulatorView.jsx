@@ -81,15 +81,15 @@ function SimulatorView() {
                 <div className="tables-container">
                     <div className="table-section">
                         <MmuViewer mmu={optimalMmmuState} algorithm="Optimo" />
-                        <ProcessInfo processes={0} time={optimalMmmuState.clock} />
-                        <RamInfo ram={0} vram={0} />
-                        <StatsInfo pagesLoaded={0} pagesNotLoaded={0} trashing={optimalMmmuState.trashing} fragmentation={0} />
+                        <ProcessInfo processes={optimalMmmuState.activeProcess} time={optimalMmmuState.clock} />
+                        <RamInfo ram={optimalMmmuState.actualRealMemoryUse} vram={optimalMmmuState.actualVirtualMemoryUse} />
+                        <StatsInfo pagesLoaded={optimalMmmuState.loadedPages} unloadedPages={optimalMmmuState.unloadedPages} trashing={optimalMmmuState.trashing} time={optimalMmmuState.clock} fragmentation={optimalMmmuState.fragmentation} />
                     </div>
                     <div className="table-section">
                         <MmuViewer mmu={mmuState} algorithm={algorithm.type} />
-                        <ProcessInfo processes={0} time={mmuState.clock} />
-                        <RamInfo ram={0} vram={0} />
-                        <StatsInfo pagesLoaded={0} pagesNotLoaded={0} trashing={mmuState.trashing} fragmentation={0} />
+                        <ProcessInfo processes={mmuState.activeProcess} time={mmuState.clock} />
+                        <RamInfo ram={mmuState.actualRealMemoryUse} vram={mmuState.actualRealMemoryUse} />
+                        <StatsInfo pagesLoaded={mmuState.loadedPages} unloadedPages={mmuState.unloadedPages} trashing={mmuState.trashing} time={mmuState.clock} fragmentation={mmuState.fragmentation} />
                     </div>
                 </div>
             </div>

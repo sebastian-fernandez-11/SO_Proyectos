@@ -13,9 +13,9 @@ function RamInfo({ ram, vram }) {
                 <tbody>
                     <tr>
                         <td>{ram}</td>
-                        <td>{(100 / 400) * ram}</td>
+                        <td>{Math.round((100 / 400) * ram)}</td>
                         <td>{vram}</td>
-                        <td>{(vram / 400) * 100}</td>
+                        <td>{Math.round((vram / 400) * 100)}</td>
                     </tr>
                 </tbody>
             </table>

@@ -1,6 +1,7 @@
 import '../styles/SimulatorView.css';
 
 function MmuViewer({ mmu, algorithm }) {
+    const totalMemory = [...mmu.realMemory, ...mmu.virtualMemory];
     return (
         <div>
             <h2>{'MMU - ' + algorithm}</h2>
@@ -14,7 +15,7 @@ function MmuViewer({ mmu, algorithm }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {mmu.realMemory.map((page, index) => (
+                        {totalMemory.map((page, index) => (
                             <tr key={index}>
                                 <td>{page.id === -1 ? ' ': page.id}</td>
                                 <td>{page.realAddress === -1 ? ' ': page.realAddress}</td>
