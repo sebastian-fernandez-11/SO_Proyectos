@@ -100,61 +100,6 @@ function generateInstructions(cant_processes: number, cant_instructions: number)
     saveAs(blob, 'instructions.txt');
 }
 
-async function readInstructions() {
-    const lines = instructions.split('\n');
-
-    lines.forEach(async line => {
-        const match = line.match(/(\w+)\((\d+)(?:,\s*(\d+))?\)/);
-        if (match) {
-            const operation = match[1];
-            const id = parseInt(match[2], 10);
-            const size = match[3] ? parseInt(match[3], 10) : undefined;
-
-            switch (operation) {
-                case 'new':
-                    console.log('New process with pid:', id, 'and size:', size);
-                    console.log('Types:', typeof id, typeof size);
-                    await Promise.all([mmu.new(id, size!), optimalMMU.new(id, size!)]);
-                    //  mmu.new(id, size!);
-                    // optimalMMU.new(id, size!);
-                    // console.log('Memory:', mmu.realMemory);
-                    // console.log('Memory Optimal:', optimalMMU.realMemory);
-                    break;
-                case 'use':
-                    console.log('Using ptr:', id);
-                    console.log('Types:', typeof id);
-                    await Promise.all([mmu.use(id), optimalMMU.use(id)]);
-                    //  mmu.use(id);
-                    // optimalMMU.use(id);
-                    // console.log('Memory:', mmu.realMemory);
-                    // console.log('Memory Optimal:', optimalMMU.realMemory);
-                    break;
-                case 'delete':
-                    console.log('Deleting ptr:', id);
-                    console.log('Types:', typeof id);
-                    await Promise.all([mmu.delete(id), optimalMMU.delete(id)]);
-                    // mmu.delete(id);
-                    // optimalMMU.delete(id);
-                    break;
-                case 'kill':
-                    console.log('Killing pid:', id);
-                    console.log('Types:', typeof id);
-                    await Promise.all([mmu.kill(id), optimalMMU.kill(id)]);
-                    // mmu.kill(id);
-                    // optimalMMU.kill(id);
-                    break;
-                default:
-                    console.error(`Operación desconocida: ${operation}`);
-            }
-        }
-    });
-
-    console.log('Clock: ', mmu.clock);
-    console.log('Trashing: ', mmu.trashing);
-    console.log('Clock Optimal: ', optimalMMU.clock);
-    console.log('Trashing Optimal: ', optimalMMU.trashing);
-}
-
 function getUsesOptimal(instructions: string): number[] {
     let usesLines = instructions.split('\n').filter(line => line.includes('use'));
     let uses: number[] = [];
@@ -174,7 +119,6 @@ function configSimulation(algtm: string, inst: string) {
     instructions = inst;
 
     optimalMMU.setUsesArray(getUsesOptimal(instructions));
-    console.log('Optimal uses:', optimalMMU.usesArray);
 }
 
 async function newProcess(pid: number, size: number): Promise<MMU[]> {

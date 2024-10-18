@@ -99,11 +99,6 @@ class MMU {
 
     // Función que realiza el swap de una página de la memoria virtual a la memoria real
     swapVirtualToReal(page: Page, ptr: number) {
-        // if (this.countFreeSpace() === 0) {
-        //     let idPageToReplace = this.selectStrategy.selectPage(this.realMemory);
-
-        //     this.swapRealToVirtual(idPageToReplace);
-        // }
         const address = this.getSpaceIndex();
         if (address === -1) {
             console.error('No hay espacio en memoria');
@@ -113,8 +108,6 @@ class MMU {
         page.isInRealMemory = true;
         page.realAddress = address;
         page.timestampFIFO = Date.now();
-
-        //page.timestampMRU = Date.now();
 
         this.realMemory[address] = page;
         this.virtualMemory = this.virtualMemory.filter(p => p.id !== page.id);
@@ -263,9 +256,7 @@ class MMU {
             if (value) {
                 let pagesInVirtual = this.checkPagesInVirtual(value);
                 while(pagesInVirtual > 0) {
-                    // while(pagesInVirtual > 0 && this.countFreeSpace() === 0) {
-                        this.makeSpaceMemory(pagesInVirtual);
-                    // }
+                    this.makeSpaceMemory(pagesInVirtual);
                     let contSwaps = 0;
                     value.forEach((pageId) => {
                         const page = this.getPage(pageId);

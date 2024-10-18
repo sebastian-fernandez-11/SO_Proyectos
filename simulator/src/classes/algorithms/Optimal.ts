@@ -31,9 +31,6 @@ class Optimal implements AlgorithmStrategy {
 
         // Si todos los punteros de la memoria se usan, se selecciona el que se usará más adelante
         for(let i = usesArray.length - 1; i >= 0; i--) {
-            // if (usesArray[i] === actualUsePtr) {
-            //     continue;
-            // }
             for (let page of realMemory) {
                 if (page.isInRealMemory && symbolTable.get(usesArray[i])?.includes(page.id)) {
                     return page.realAddress;
